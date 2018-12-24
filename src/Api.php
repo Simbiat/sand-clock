@@ -6,25 +6,25 @@ class Api
 {
     private $dtformat = 'Y-m-d H:i:s.u';
     
-    private function time($time = 0): string
+    public function format($time = 0): string
     {
-        if (is_int($time)) {
-            if (is_numeric($time)) {
-                 if ((int)$time == $time) {
-                    $time = (int)$time;
-                 } else {
-                    $time = strtotime($time);
-                 }
-            } else {
-                $time = strtotime($time);
-            }
+        if (empty($time)) {
+            $time = microtime(true);
         } else {
-            $time = microtime(true);
+            if (is_numeric($time)) {
+                $time = abs(intval($time));
+            } else {
+                if (is_string($time)) {
+                    $time = strtotime($time);
+                    if ($time === false) {
+                        throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
+                    }
+                } else {
+                    throw new \UnexpectedValueException('Time provided is not numeric or string.');
+                }
+            }
         }
-        if ($time === false) {
-            $time = microtime(true);
-        }
-        return (\DateTime::createFromFormat('U.u', number_format($time, 6, '.', '')))->format($this->getFormat());
+        return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')))->format($this->getFormat());
     }
     
     #####################
