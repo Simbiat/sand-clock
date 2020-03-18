@@ -4,7 +4,7 @@ namespace SandClock;
 
 class Api
 {
-    private $dtformat = 'Y-m-d H:i:s.u';
+    private string $dtformat = 'Y-m-d H:i:s.u';
     const timeunits = [
         'seconds'=>[
 	        'dependon'=>'seconds',
