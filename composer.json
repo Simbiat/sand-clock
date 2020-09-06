@@ -4,7 +4,7 @@
     "keywords": ["sand","clock", "time","date","datetime"],
     "description": "Collection of functions to present time-related objects",
     "homepage": "https://github.com/Simbiat/cute-bytes",
-    "license": "MIT",
+    "license": "AGPL-3.0-or-later",
     "authors": [
         {
             "name": "Dmitry Kustov",
