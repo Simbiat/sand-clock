@@ -164,7 +164,7 @@ class Api
         ],
     ];
     
-    public function format($time = 0): string
+    public function format(string|float|int $time = 0): string
     {
         if (empty($time)) {
             $time = microtime(true);
@@ -185,7 +185,7 @@ class Api
         return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')))->format($this->getFormat());
     }
     
-    public function seconds($seconds = 0, $full = true, $lang = 'en'): string
+    public function seconds(string|float|int $seconds = 0, bool $full = true, string $lang = 'en'): string
     {
         if (!is_numeric($seconds)) {
             throw new \UnexpectedValueException('Seconds provided is not numeric.');
@@ -224,27 +224,27 @@ class Api
                 }
                 #Add previous (already adjsuted) unit to resulting line. 'Years' and 'months' are skipped, to prevent early addition of 'days', since final value is known only on 'weeks' cycle
                 if ($type !== 'years' && $type !== 'months' && floor($units[$unit['dependon']]['value'])>0) {
-                    $result = floor($units[$unit['dependon']]['value']).($full ? ' '.(floor($units[$unit['dependon']]['value'])>1 ? $units[$unit['dependon']]['lang'][$lang][1] : $units[$unit['dependon']]['lang'][$lang][0]).' ' : ':').$result;
+                    $result = floor($units[$unit['dependon']]['value']).($full === true ? ' '.(floor($units[$unit['dependon']]['value'])>1 ? $units[$unit['dependon']]['lang'][$lang][1] : $units[$unit['dependon']]['lang'][$lang][0]).' ' : ':').$result;
                 }
                 if ($type === 'weeks') {
                     #Adding weeks
                     if (floor($units[$type]['value'])>0) {
-                        $result = floor($units[$type]['value']).($full ? ' '.(floor($units[$type]['value'])>1 ? $units[$type]['lang'][$lang][1] : $units[$type]['lang'][$lang][0]).' ' : ':').$result;
+                        $result = floor($units[$type]['value']).($full === true ? ' '.(floor($units[$type]['value'])>1 ? $units[$type]['lang'][$lang][1] : $units[$type]['lang'][$lang][0]).' ' : ':').$result;
                     }
                     #Adding months
                     if (floor($units['months']['value'])>0) {
-                        $result = floor($units['months']['value']).($full ? ' '.(floor($units['months']['value'])>1 ? $units['months']['lang'][$lang][1] : $units['months']['lang'][$lang][0]).' ' : ':').$result;
+                        $result = floor($units['months']['value']).($full === true ? ' '.(floor($units['months']['value'])>1 ? $units['months']['lang'][$lang][1] : $units['months']['lang'][$lang][0]).' ' : ':').$result;
                     }
                 }
                 #Special for aeons, since last itteration
                 if ($type === 'aeons'  && floor($units[$type]['value'])>0) {
-                    $result = rtrim(trim(floor($units[$type]['value']).($full ? ' '.(floor($units[$type]['value'])>1 ? $units[$type]['lang'][$lang][1] : $units[$type]['lang'][$lang][0]).' ' : ':').$result), ':');
+                    $result = rtrim(trim(floor($units[$type]['value']).($full === true ? ' '.(floor($units[$type]['value'])>1 ? $units[$type]['lang'][$lang][1] : $units[$type]['lang'][$lang][0]).' ' : ':').$result), ':');
                 }
             }
             
         }
         if (empty($result)) {
-            $result = '0'.($full ? ' seconds' : '');
+            $result = '0'.($full === true ? ' seconds' : '');
         }
         return $result;
     }
