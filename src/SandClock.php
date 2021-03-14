@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace SandClock;
+namespace Simbiat;
 
-class Api
+class SandClock
 {
     private string $dtformat = 'Y-m-d H:i:s.u';
     const timeunits = [
