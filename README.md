@@ -31,3 +31,5 @@ This function is multilingual and at the moment supports 7 languages: Deutsch (d
 echo (new \Simbiat\SandClock)->seconds('31536050000829051', true, 'jp');
 ```
 will output `1 ion 1 sennenki 5 seiki 8 tōnen 5 toshi 6 tsuki 1 shū 1 hi 7 jikan 10 bun 52 byō`
+
+You can also pass `iso: true` in order to generate the output compliant with ISO 8601 duration format like `P51Y8M0W4DT8H20M31S`

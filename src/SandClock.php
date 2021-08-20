@@ -18,6 +18,7 @@ class SandClock
                 'jp'=>['byō','byō'],
                 'ru'=>['секунда','секунд'],
             ],
+            'value'=>0,
         ],
         'minutes'=>[
             'dependOn'=>'seconds',
@@ -31,6 +32,7 @@ class SandClock
                 'jp'=>['bun','bun'],
                 'ru'=>['минута','минут'],
             ],
+            'value'=>0,
         ],
         'hours'=>[
             'dependOn'=>'minutes',
@@ -44,6 +46,7 @@ class SandClock
                 'jp'=>['jikan','jikan'],
                 'ru'=>['час','часов'],
             ],
+            'value'=>0,
         ],
         'days'=>[
             'dependOn'=>'hours',
@@ -57,6 +60,7 @@ class SandClock
                 'jp'=>['hi','hi'],
                 'ru'=>['день','дней'],
             ],
+            'value'=>0,
         ],
         'years'=>[
             'dependOn'=>'days',
@@ -70,6 +74,7 @@ class SandClock
                 'jp'=>['toshi','toshi'],
                 'ru'=>['год','лет'],
             ],
+            'value'=>0,
         ],
         'months'=>[
             'dependOn'=>'days',
@@ -83,6 +88,7 @@ class SandClock
                 'jp'=>['tsuki','tsuki'],
                 'ru'=>['месяц','месяцев'],
             ],
+            'value'=>0,
         ],
         'weeks'=>[
             'dependOn'=>'days',
@@ -96,6 +102,7 @@ class SandClock
                 'jp'=>['shū','shū'],
                 'ru'=>['неделя','недель'],
             ],
+            'value'=>0,
         ],
         'decades'=>[
             'dependOn'=>'years',
@@ -109,6 +116,7 @@ class SandClock
                 'jp'=>['tōnen','tōnen'],
                 'ru'=>['декада','декад'],
             ],
+            'value'=>0,
         ],
         'centuries'=>[
             'dependOn'=>'decades',
@@ -122,6 +130,7 @@ class SandClock
                 'jp'=>['seiki','seiki'],
                 'ru'=>['век','веков'],
             ],
+            'value'=>0,
         ],
         'millenniums'=>[
             'dependOn'=>'centuries',
@@ -135,6 +144,7 @@ class SandClock
                 'jp'=>['sennenki','sennenki'],
                 'ru'=>['миллениум','миллениумов'],
             ],
+            'value'=>0,
         ],
         'megannums'=>[
             'dependOn'=>'millenniums',
@@ -148,6 +158,7 @@ class SandClock
                 'jp'=>['meganamu','meganamu'],
                 'ru'=>['мегагод','мегалет'],
             ],
+            'value'=>0,
         ],
         'aeons'=>[
             'dependOn'=>'megannums',
@@ -161,6 +172,7 @@ class SandClock
                 'jp'=>['ion','ion'],
                 'ru'=>['гигагод','гигалет'],
             ],
+            'value'=>0,
         ],
     ];
 
@@ -185,7 +197,7 @@ class SandClock
         return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')))->format($this->getFormat());
     }
 
-    public function seconds(string|float|int $seconds = 0, bool $full = true, string $lang = 'en'): string
+    public function seconds(string|float|int $seconds = 0, bool $full = true, string $lang = 'en', bool $iso = false): string
     {
         if (!is_numeric($seconds)) {
             throw new \UnexpectedValueException('Seconds provided is not numeric.');
@@ -193,6 +205,10 @@ class SandClock
         #Enforce lower case for consistency
         $lang = strtolower($lang);
         $units = self::timeunits;
+        #If using ISO 8601 duration format, remove unused units
+        if ($iso) {
+            unset($units['decades'], $units['centuries'], $units['millenniums'], $units['megannums'], $units['aeons']);
+        }
         #Check if language is supported
         if (!in_array($lang, array_keys($units['seconds']['lang']))) {
             throw new \UnexpectedValueException('Unsupported language (`'.$lang.'`).');
@@ -244,7 +260,15 @@ class SandClock
 
         }
         if (empty($result)) {
-            $result = '0'.($full === true ? ' seconds' : '');
+            if ($iso) {
+                $result = 'P0Y0M0W0DT0H0M0S';
+            } else {
+                $result = '0' . ($full === true ? ' seconds' : '');
+            }
+        } else {
+            if ($iso) {
+                $result = 'P'.floor($units['years']['value']).'Y'.floor($units['months']['value']).'M'.floor($units['weeks']['value']).'W'.floor($units['days']['value']).'DT'.floor($units['hours']['value']).'H'.floor($units['minutes']['value']).'M'.floor($units['seconds']['value']).'S';
+            }
         }
         return $result;
     }
