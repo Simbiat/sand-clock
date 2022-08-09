@@ -4,7 +4,6 @@ namespace Simbiat;
 
 class SandClock
 {
-    private string $dtFormat = 'Y-m-d H:i:s.u';
     const timeunits = [
         'seconds'=>[
             'dependOn'=>'seconds',
@@ -176,7 +175,7 @@ class SandClock
         ],
     ];
 
-    public function format(string|float|int $time = 0): string
+    public static function format(string|float|int $time = 0, string $dtFormat = 'Y-m-d H:i:s.u'): string
     {
         if (empty($time)) {
             $time = microtime(true);
@@ -194,10 +193,10 @@ class SandClock
                 }
             }
         }
-        return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')))->format($this->getFormat());
+        return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')))->format($dtFormat);
     }
 
-    public function seconds(string|float|int $seconds = 0, bool $full = true, string $lang = 'en', bool $iso = false): string
+    public static function seconds(string|float|int $seconds = 0, bool $full = true, string $lang = 'en', bool $iso = false): string
     {
         if (!is_numeric($seconds)) {
             throw new \UnexpectedValueException('Seconds provided is not numeric.');
@@ -271,19 +270,5 @@ class SandClock
             }
         }
         return $result;
-    }
-
-    #####################
-    #Setters and getters#
-    #####################
-    public function getFormat(): string
-    {
-        return $this->dtFormat;
-    }
-
-    public function setFormat(string $dtFormat): self
-    {
-        $this->dtFormat = $dtFormat;
-        return $this;
     }
 }
