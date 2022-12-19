@@ -271,4 +271,58 @@ class SandClock
         }
         return $result;
     }
+    
+    public static function convertTimezone(int|string|\DateTime|\DateTimeImmutable $time, string|\DateTimeZone|null $from = null, string|\DateTimeZone $to = 'UTC'): \DateTime
+    {
+        #Validate and convert timezone, if any of them is a string
+        if (is_string($from)) {
+            if (!in_array($from, timezone_identifiers_list())) {
+                throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
+            } else {
+                $from = new \DateTimeZone($from);
+            }
+        }
+        if (is_string($to)) {
+            if (!in_array($to, timezone_identifiers_list())) {
+                throw new \UnexpectedValueException('`'.$to.'` is not a supported timezone');
+            } else {
+                $to = new \DateTimeZone($to);
+            }
+        }
+        #Set the object depending on what we got
+        if ($time instanceof \DateTimeImmutable) {
+            $datetime = $time;
+        } elseif ($time instanceof \DateTime) {
+            $datetime = clone $time;
+        } else {
+            #If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get default one during conversion, which may not be desired
+            if (empty($from)) {
+                throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
+            }
+            try {
+                if (preg_match('/\d{10}/', strval($time)) === 1) {
+                    $datetime = new \DateTime(timezone: $from);
+                    $datetime->setTimestamp(intval($time));
+                } else {
+                    try {
+                        $datetime = new \DateTime($time, $from);
+                    } catch (\Throwable) {
+                        $datetime = new \DateTime(timezone: $from);
+                        $datetime->setTimestamp(intval($time));
+                    }
+                }
+            } catch (\Throwable $throwable) {
+                throw new \RuntimeException('Failed to create DateTime object from `'.$time.'`', previous: $throwable);
+            }
+        }
+        #If somehow we do not have original timezone in DateTime object at this point - something went wrong.
+        #Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
+        if (!$datetime->getTimezone()) {
+            throw new \UnexpectedValueException('No TimeZone found in DateTime object');
+        }
+        #Change the timezone
+        $datetime->setTimezone($to);
+        #Return
+        return $datetime;
+    }
 }
