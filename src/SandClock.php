@@ -4,7 +4,7 @@ namespace Simbiat;
 
 class SandClock
 {
-    const timeunits = [
+    const array timeunits = [
         'seconds'=>[
             'dependOn'=>'seconds',
             'power'=>1,
@@ -179,19 +179,16 @@ class SandClock
     {
         if (empty($time)) {
             $time = microtime(true);
-        } else {
-            if (is_numeric($time)) {
-                $time = abs(intval($time));
-            } else {
-                if (is_string($time)) {
-                    $time = strtotime($time);
-                    if ($time === false) {
-                        throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
-                    }
-                } else {
-                    throw new \UnexpectedValueException('Time provided is not numeric or string.');
-                }
+        } elseif (is_numeric($time)) {
+            $time = abs((int)$time);
+        } elseif (is_string($time)) {
+            $timeFromString = strtotime($time);
+            if ($timeFromString === false) {
+                throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
             }
+            $time = $timeFromString;
+        } else {
+            throw new \UnexpectedValueException('Time provided is not numeric or string.');
         }
         return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')))->format($dtFormat);
     }
@@ -202,39 +199,37 @@ class SandClock
             throw new \UnexpectedValueException('Seconds provided is not numeric.');
         }
         #Enforce lower case for consistency
-        $lang = strtolower($lang);
+        $lang = mb_strtolower($lang, 'UTF-8');
         $units = self::timeunits;
         #If using ISO 8601 duration format, remove unused units
         if ($iso) {
             unset($units['decades'], $units['centuries'], $units['millenniums'], $units['megannums'], $units['aeons']);
         }
         #Check if language is supported
-        if (!in_array($lang, array_keys($units['seconds']['lang']))) {
+        if (!array_key_exists($lang, $units['seconds']['lang'])) {
             throw new \UnexpectedValueException('Unsupported language (`'.$lang.'`).');
         }
         $result = '';
         foreach ($units as $type=>$unit) {
             if ($type === 'seconds') {
                 #Just adding seconds to the array to work with them going forward and explicitly converting to float (which is larger than integer) to prevent implicit conversions in following functions
-                $units[$type]['value'] = floatval($seconds);
+                $units[$type]['value'] = (float)$seconds;
             } else {
                 #Calculate current unit type value based on predefined power of the dependant
                 $units[$type]['value'] = $units[$unit['dependOn']]['value']/$unit['power'];
                 if ($type === 'months') {
                     #Adjust number of days, in case we have 30 days or more, each 30 days is 1 month
                     while (floor($units[$type]['value'])>0 && $units[$unit['dependOn']]['value']>=$unit['power']) {
-                        $units[$unit['dependOn']]['value'] = $units[$unit['dependOn']]['value'] - $unit['power'];
+                        $units[ $unit['dependOn'] ]['value'] -= $unit['power'];
                     }
-                } else {
                     #Deduct current unit value from the previous one in order to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
-                    if ($type !== 'weeks' || (floor($units[$type]['value'])>0 && $units[$unit['dependOn']]['value']>=$unit['power'])) {
-                        $units[$unit['dependOn']]['value'] = abs($units[$unit['dependOn']]['value']-floor($units[$type]['value'])*$unit['power']);
-                    }
+                } elseif ($type !== 'weeks' || (floor($units[$type]['value'])>0 && $units[$unit['dependOn']]['value']>=$unit['power'])) {
+                    $units[$unit['dependOn']]['value'] = abs($units[$unit['dependOn']]['value']-floor($units[$type]['value'])*$unit['power']);
                 }
                 if ($type === 'weeks') {
                     #Adjust number of weeks, in case we have 4 weeks or more, each 4 weeks is ~1 month
                     while (floor($units['months']['value'])>0 && $units[$type]['value']>=4) {
-                        $units[$type]['value'] = $units[$type]['value'] - 4;
+                        $units[ $type ]['value'] -= 4;
                     }
                 }
                 #Add previous (already adjusted) unit to resulting line. 'Years' and 'months' are skipped, to prevent early addition of 'days', since final value is known only on 'weeks' cycle
@@ -264,10 +259,8 @@ class SandClock
             } else {
                 $result = '0' . ($full === true ? ' seconds' : '');
             }
-        } else {
-            if ($iso) {
-                $result = 'P'.floor($units['years']['value']).'Y'.floor($units['months']['value']).'M'.floor($units['weeks']['value']).'W'.floor($units['days']['value']).'DT'.floor($units['hours']['value']).'H'.floor($units['minutes']['value']).'M'.floor($units['seconds']['value']).'S';
-            }
+        } elseif ($iso) {
+            $result = 'P'.floor($units['years']['value']).'Y'.floor($units['months']['value']).'M'.floor($units['weeks']['value']).'W'.floor($units['days']['value']).'DT'.floor($units['hours']['value']).'H'.floor($units['minutes']['value']).'M'.floor($units['seconds']['value']).'S';
         }
         return $result;
     }
@@ -276,17 +269,23 @@ class SandClock
     {
         #Validate and convert timezone, if any of them is a string
         if (is_string($from)) {
-            if (!in_array($from, timezone_identifiers_list())) {
+            if (!in_array($from, timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
-            } else {
+            }
+            try {
                 $from = new \DateTimeZone($from);
+            } catch (\Throwable) {
+                throw new \UnexpectedValueException('Failed to convert `'.$from.'` to time');
             }
         }
         if (is_string($to)) {
-            if (!in_array($to, timezone_identifiers_list())) {
+            if (!in_array($to, timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$to.'` is not a supported timezone');
-            } else {
+            }
+            try {
                 $to = new \DateTimeZone($to);
+            } catch (\Throwable) {
+                throw new \UnexpectedValueException('Failed to convert `'.$to.'` to time');
             }
         }
         #Set the object depending on what we got
@@ -300,15 +299,15 @@ class SandClock
                 throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
             }
             try {
-                if (preg_match('/\d{10}/', strval($time)) === 1) {
+                if (preg_match('/\d{10}/', (string)$time) === 1) {
                     $datetime = new \DateTime(timezone: $from);
-                    $datetime->setTimestamp(intval($time));
+                    $datetime->setTimestamp((int)$time);
                 } else {
                     try {
                         $datetime = new \DateTime($time, $from);
                     } catch (\Throwable) {
                         $datetime = new \DateTime(timezone: $from);
-                        $datetime->setTimestamp(intval($time));
+                        $datetime->setTimestamp((int)$time);
                     }
                 }
             } catch (\Throwable $throwable) {
