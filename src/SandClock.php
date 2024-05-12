@@ -365,4 +365,43 @@ class SandClock
         #Return
         return $datetime;
     }
+    
+    /**
+     * Function to suggest next day that satisfies day of week/month restrictions based on provided timestamp
+     * @param int   $timestamp  Timestamp to start with
+     * @param int[] $dayofweek  List of allowed days of week
+     * @param int[] $dayofmonth List of allowed days of month
+     *
+     * @return int
+     */
+    public static function suggestNextDay(int $timestamp, array $dayofweek, array $dayofmonth): int
+    {
+        #Split is done to slightly improve performance
+        if (!empty($dayofweek) && !empty($dayofmonth)) {
+            #Check if week is suitable
+            for ($i = 0; $i <= 366; $i++) {
+                $timestampNew = $timestamp + $i * 86400;
+                if (in_array((int)date('N', $timestampNew), $dayofweek, true) && in_array((int)date('j', $timestampNew), $dayofmonth, true)) {
+                    return $timestampNew;
+                }
+            }
+        } elseif (!empty($dayofweek)) {
+            #Check if week is suitable
+            for ($i = 0; $i <= 7; $i++) {
+                $timestampNew = $timestamp + $i * 86400;
+                if (in_array((int)date('N', $timestampNew), $dayofweek, true)) {
+                    return $timestampNew;
+                }
+            }
+        } elseif (!empty($dayofmonth)) {
+            #Check if month is suitable
+            for ($i = 0; $i <= 52; $i++) {
+                $timestampNew = $timestamp + $i * 604800;
+                if (in_array((int)date('j', $timestampNew), $dayofmonth, true)) {
+                    return $timestampNew;
+                }
+            }
+        }
+        return $timestamp;
+    }
 }
