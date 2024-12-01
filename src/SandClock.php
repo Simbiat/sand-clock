@@ -207,11 +207,11 @@ class SandClock
         } elseif (is_numeric($time)) {
             $time = abs((int)$time);
         } elseif (is_string($time)) {
-            $timeFromString = strtotime($time);
-            if ($timeFromString === false) {
+            try {
+                return new \DateTimeImmutable($time)->format($dtFormat);
+            } catch (\Throwable) {
                 throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
             }
-            $time = $timeFromString;
         } else {
             throw new \UnexpectedValueException('Time provided is not numeric or string.');
         }
