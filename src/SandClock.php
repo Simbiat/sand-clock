@@ -219,18 +219,18 @@ class SandClock
         if ($time instanceof \DateTimeImmutable) {
             return $time;
         }
+        if (empty($time)) {
+            $time = microtime(true);
+        } elseif (is_numeric($time)) {
+            $time = abs((int)$time);
+        }
         if (is_string($time)) {
             try {
                 return new \DateTimeImmutable($time);
             } catch (\Throwable) {
                 throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
             }
-        }
-        if (empty($time)) {
-            $time = microtime(true);
-        } elseif (is_numeric($time)) {
-            $time = abs((int)$time);
-        } else {
+        } elseif (!\is_int($time) && !\is_float($time)) {
             throw new \UnexpectedValueException('Time provided is not of supported value type.');
         }
         return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')));
