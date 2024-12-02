@@ -195,27 +195,45 @@ class SandClock
     
     /**
      * Format  a value into date
-     * @param string|float|int $time     Value to format
-     * @param string           $dtFormat Expected format
+     *
+     * @param string|float|int|\DateTime|\DateTimeImmutable|null $time     Value to format
+     * @param string                                             $dtFormat Expected format
      *
      * @return string
      */
-    public static function format(string|float|int $time = 0, string $dtFormat = 'Y-m-d H:i:s.u'): string
+    public static function format(string|float|int|\DateTime|\DateTimeImmutable|null $time = null, string $dtFormat = 'Y-m-d H:i:s.u'): string
     {
+        return self::valueToDateTime($time)->format($dtFormat);
+    }
+    
+    /**
+     * @param string|float|int|\DateTime|\DateTimeImmutable|null $time Value to convert to DateTimeImmutable
+     *
+     * @return \DateTimeImmutable
+     */
+    public static function valueToDateTime(string|float|int|null|\DateTime|\DateTimeImmutable $time = null): \DateTimeImmutable
+    {
+        if ($time instanceof \DateTime) {
+            return \DateTimeImmutable::createFromMutable($time);
+        }
+        if ($time instanceof \DateTimeImmutable) {
+            return $time;
+        }
+        if (is_string($time)) {
+            try {
+                return new \DateTimeImmutable($time);
+            } catch (\Throwable) {
+                throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
+            }
+        }
         if (empty($time)) {
             $time = microtime(true);
         } elseif (is_numeric($time)) {
             $time = abs((int)$time);
-        } elseif (is_string($time)) {
-            try {
-                return new \DateTimeImmutable($time)->format($dtFormat);
-            } catch (\Throwable) {
-                throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
-            }
         } else {
-            throw new \UnexpectedValueException('Time provided is not numeric or string.');
+            throw new \UnexpectedValueException('Time provided is not of supported value type.');
         }
-        return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')))->format($dtFormat);
+        return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')));
     }
     
     /**
@@ -368,40 +386,47 @@ class SandClock
     
     /**
      * Function to suggest next day that satisfies day of week/month restrictions based on provided timestamp
-     * @param int   $timestamp  Timestamp to start with
-     * @param int[] $dayofweek  List of allowed days of week
-     * @param int[] $dayofmonth List of allowed days of month
      *
-     * @return int
+     * @param string|float|int|\DateTime|\DateTimeImmutable|null $timestamp  Timestamp to start with
+     * @param int[]                                              $dayofweek  List of allowed days of week
+     * @param int[]                                              $dayofmonth List of allowed days of month
+     *
+     * @return \DateTimeImmutable
+     * @throws \DateMalformedStringException
      */
-    public static function suggestNextDay(int $timestamp, array $dayofweek, array $dayofmonth): int
+    public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $dayofweek, array $dayofmonth): \DateTimeImmutable
     {
+        $dateTime = self::valueToDateTime($timestamp);
         #Split is done to slightly improve performance
         if (!empty($dayofweek) && !empty($dayofmonth)) {
             #Check if week is suitable
             for ($i = 0; $i <= 366; $i++) {
-                $timestampNew = $timestamp + $i * 86400;
-                if (in_array((int)date('N', $timestampNew), $dayofweek, true) && in_array((int)date('j', $timestampNew), $dayofmonth, true)) {
+                $timestampNew = $dateTime->modify('+'.($i * 86400).' seconds');
+                $weekNumber = (int)$timestampNew->format('N');
+                $monthNumber = (int)$timestampNew->format('j');
+                if (in_array($weekNumber, $dayofweek, true) && in_array($monthNumber, $dayofmonth, true)) {
                     return $timestampNew;
                 }
             }
         } elseif (!empty($dayofweek)) {
             #Check if week is suitable
             for ($i = 0; $i <= 7; $i++) {
-                $timestampNew = $timestamp + $i * 86400;
-                if (in_array((int)date('N', $timestampNew), $dayofweek, true)) {
+                $timestampNew = $dateTime->modify('+'.($i * 86400).' seconds');
+                $weekNumber = (int)$timestampNew->format('N');
+                if (in_array($weekNumber, $dayofweek, true)) {
                     return $timestampNew;
                 }
             }
         } elseif (!empty($dayofmonth)) {
             #Check if month is suitable
             for ($i = 0; $i <= 52; $i++) {
-                $timestampNew = $timestamp + $i * 604800;
-                if (in_array((int)date('j', $timestampNew), $dayofmonth, true)) {
+                $timestampNew = $dateTime->modify('+'.($i * 604800).' seconds');
+                $monthNumber = (int)$timestampNew->format('j');
+                if (in_array($monthNumber, $dayofmonth, true)) {
                     return $timestampNew;
                 }
             }
         }
-        return $timestamp;
+        return $dateTime;
     }
 }
