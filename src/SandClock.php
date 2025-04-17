@@ -194,7 +194,7 @@ class SandClock
     ];
     
     /**
-     * Format  a value into date
+     * Format a value into a date
      *
      * @param string|float|int|\DateTime|\DateTimeImmutable|null $time     Value to format
      * @param string                                             $dtFormat Expected format
@@ -257,34 +257,34 @@ class SandClock
         if ($iso) {
             unset($units['decades'], $units['centuries'], $units['millenniums'], $units['megannums'], $units['aeons']);
         }
-        #Check if language is supported
+        #Check if the language is supported
         if (!\array_key_exists($lang, $units['seconds']['lang'])) {
             throw new \UnexpectedValueException('Unsupported language (`'.$lang.'`).');
         }
         $result = '';
         foreach ($units as $type => $unit) {
             if ($type === 'seconds') {
-                #Just adding seconds to the array to work with them going forward and explicitly converting to float (which is larger than integer) to prevent implicit conversions in following functions
+                #Just adding seconds to the array to work with them going forward and explicitly converting to float (which is larger than integer) to prevent implicit conversions in the following functions
                 $units[$type]['value'] = (float)$seconds;
             } else {
                 #Calculate current unit type value based on predefined power of the dependant
                 $units[$type]['value'] = $units[$unit['dependOn']]['value'] / $unit['power'];
                 if ($type === 'months') {
-                    #Adjust number of days, in case we have 30 days or more, each 30 days is 1 month
+                    #Adjust the number of days, in case we have 30 days or more; each 30 days is 1 month
                     while (floor($units[$type]['value']) > 0 && $units[$unit['dependOn']]['value'] >= $unit['power']) {
                         $units[$unit['dependOn']]['value'] -= $unit['power'];
                     }
-                    #Deduct current unit value from the previous one in order to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
+                    #Deduct the current unit value from the previous one to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
                 } elseif ($type !== 'weeks' || (floor($units[$type]['value']) > 0 && $units[$unit['dependOn']]['value'] >= $unit['power'])) {
                     $units[$unit['dependOn']]['value'] = abs($units[$unit['dependOn']]['value'] - floor($units[$type]['value']) * $unit['power']);
                 }
                 if ($type === 'weeks') {
-                    #Adjust number of weeks, in case we have 4 weeks or more, each 4 weeks is ~1 month
+                    #Adjust the number of weeks, in case we have 4 weeks or more; each 4 weeks is ~1 month
                     while (floor($units['months']['value']) > 0 && $units[$type]['value'] >= 4) {
                         $units[$type]['value'] -= 4;
                     }
                 }
-                #Add previous (already adjusted) unit to resulting line. 'Years' and 'months' are skipped, to prevent early addition of 'days', since final value is known only on 'weeks' cycle
+                #Add the previous (already adjusted) unit to the resulting line. 'Years' and 'months' are skipped to prevent early addition of 'days', since the final value is known only on the 'weeks' cycle
                 if ($type !== 'years' && $type !== 'months' && floor($units[$unit['dependOn']]['value']) > 0) {
                     $result = floor($units[$unit['dependOn']]['value']).($full === true ? ' '.(floor($units[$unit['dependOn']]['value']) > 1 ? $units[$unit['dependOn']]['lang'][$lang][1] : $units[$unit['dependOn']]['lang'][$lang][0]).' ' : ':').$result;
                 }
@@ -326,7 +326,7 @@ class SandClock
      */
     public static function convertTimezone(int|string|\DateTime|\DateTimeImmutable $time, string|\DateTimeZone|null $from = null, string|\DateTimeZone $to = 'UTC'): \DateTime
     {
-        #Validate and convert timezone, if any of them is a string
+        #Validate and convert timezone if any of them is a string
         if (is_string($from)) {
             if (!in_array($from, timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
@@ -353,7 +353,7 @@ class SandClock
         } elseif ($time instanceof \DateTime) {
             $datetime = clone $time;
         } else {
-            #If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get default one during conversion, which may not be desired
+            #If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get the default one during conversion, which may not be desired
             if (empty($from)) {
                 throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
             }
@@ -373,7 +373,7 @@ class SandClock
                 throw new \RuntimeException('Failed to create DateTime object from `'.$time.'`', previous: $throwable);
             }
         }
-        #If somehow we do not have original timezone in DateTime object at this point - something went wrong.
+        #If somehow we do not have the original timezone in the `DateTime` object at this point - something went wrong.
         #Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
         if (!$datetime->getTimezone()) {
             throw new \UnexpectedValueException('No TimeZone found in DateTime object');
@@ -385,44 +385,44 @@ class SandClock
     }
     
     /**
-     * Function to suggest next day that satisfies day of week/month restrictions based on provided timestamp
+     * Function to suggest next day that satisfies day of week/month restrictions based on the provided timestamp
      *
      * @param string|float|int|\DateTime|\DateTimeImmutable|null $timestamp  Timestamp to start with
-     * @param int[]                                              $dayofweek  List of allowed days of week
-     * @param int[]                                              $dayofmonth List of allowed days of month
+     * @param int[]                                              $dayOfWeek  List of allowed days of the week
+     * @param int[]                                              $dayOfMonth List of allowed days of the month
      *
      * @return \DateTimeImmutable
      * @throws \DateMalformedStringException
      */
-    public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $dayofweek, array $dayofmonth): \DateTimeImmutable
+    public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $dayOfWeek, array $dayOfMonth): \DateTimeImmutable
     {
         $dateTime = self::valueToDateTime($timestamp);
         #Split is done to slightly improve performance
-        if (!empty($dayofweek) && !empty($dayofmonth)) {
+        if (!empty($dayOfWeek) && !empty($dayOfMonth)) {
             #Check if week is suitable
             for ($i = 0; $i <= 366; $i++) {
                 $timestampNew = $dateTime->modify('+'.$i.' days');
                 $weekNumber = (int)$timestampNew->format('N');
                 $monthNumber = (int)$timestampNew->format('j');
-                if (in_array($weekNumber, $dayofweek, true) && in_array($monthNumber, $dayofmonth, true)) {
+                if (in_array($weekNumber, $dayOfWeek, true) && in_array($monthNumber, $dayOfMonth, true)) {
                     return $timestampNew;
                 }
             }
-        } elseif (!empty($dayofweek)) {
+        } elseif (!empty($dayOfWeek)) {
             #Check if week is suitable
             for ($i = 0; $i <= 7; $i++) {
                 $timestampNew = $dateTime->modify('+'.$i.' days');
                 $weekNumber = (int)$timestampNew->format('N');
-                if (in_array($weekNumber, $dayofweek, true)) {
+                if (in_array($weekNumber, $dayOfWeek, true)) {
                     return $timestampNew;
                 }
             }
-        } elseif (!empty($dayofmonth)) {
-            #Check if month is suitable
+        } elseif (!empty($dayOfMonth)) {
+            #Check if the month is suitable
             for ($i = 0; $i <= 52; $i++) {
                 $timestampNew = $dateTime->modify('+'.$i.' weeks');
                 $monthNumber = (int)$timestampNew->format('j');
-                if (in_array($monthNumber, $dayofmonth, true)) {
+                if (in_array($monthNumber, $dayOfMonth, true)) {
                     return $timestampNew;
                 }
             }
