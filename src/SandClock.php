@@ -300,7 +300,7 @@ class SandClock
                 }
                 #Special for aeons, since last iteration
                 if ($type === 'aeons' && floor($units[$type]['value']) > 0) {
-                    $result = rtrim(trim(floor($units['aeons']['value']).($full ? ' '.(floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result), ':');
+                    $result = mb_rtrim(mb_trim(floor($units['aeons']['value']).($full ? ' '.(floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, encoding: 'UTF-8'), ':', 'UTF-8');
                 }
             }
         }
