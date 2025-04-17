@@ -291,16 +291,16 @@ class SandClock
                 if ($type === 'weeks') {
                     #Adding weeks
                     if (floor($units[$type]['value']) > 0) {
-                        $result = floor($units['weeks']['value']).($full === true ? ' '.(floor($units['weeks']['value']) > 1 ? $units['weeks']['lang'][$lang][1] : $units['weeks']['lang'][$lang][0]).' ' : ':').$result;
+                        $result = floor($units['weeks']['value']).($full ? ' '.(floor($units['weeks']['value']) > 1 ? $units['weeks']['lang'][$lang][1] : $units['weeks']['lang'][$lang][0]).' ' : ':').$result;
                     }
                     #Adding months
                     if (floor($units['months']['value']) > 0) {
-                        $result = floor($units['months']['value']).($full === true ? ' '.(floor($units['months']['value']) > 1 ? $units['months']['lang'][$lang][1] : $units['months']['lang'][$lang][0]).' ' : ':').$result;
+                        $result = floor($units['months']['value']).($full ? ' '.(floor($units['months']['value']) > 1 ? $units['months']['lang'][$lang][1] : $units['months']['lang'][$lang][0]).' ' : ':').$result;
                     }
                 }
                 #Special for aeons, since last iteration
                 if ($type === 'aeons' && floor($units[$type]['value']) > 0) {
-                    $result = rtrim(trim(floor($units['aeons']['value']).($full === true ? ' '.(floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result), ':');
+                    $result = rtrim(trim(floor($units['aeons']['value']).($full ? ' '.(floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result), ':');
                 }
             }
         }
@@ -308,7 +308,7 @@ class SandClock
             if ($iso) {
                 $result = 'P0Y0M0W0DT0H0M0S';
             } else {
-                $result = '0'.($full === true ? ' seconds' : '');
+                $result = '0'.($full ? ' seconds' : '');
             }
         } elseif ($iso) {
             $result = 'P'.floor($units['years']['value']).'Y'.floor($units['months']['value']).'M'.floor($units['weeks']['value']).'W'.floor($units['days']['value']).'DT'.floor($units['hours']['value']).'H'.floor($units['minutes']['value']).'M'.floor($units['seconds']['value']).'S';
@@ -401,7 +401,7 @@ class SandClock
         if (!empty($dayofweek) && !empty($dayofmonth)) {
             #Check if week is suitable
             for ($i = 0; $i <= 366; $i++) {
-                $timestampNew = $dateTime->modify('+'.($i * 86400).' seconds');
+                $timestampNew = $dateTime->modify('+'.$i.' days');
                 $weekNumber = (int)$timestampNew->format('N');
                 $monthNumber = (int)$timestampNew->format('j');
                 if (in_array($weekNumber, $dayofweek, true) && in_array($monthNumber, $dayofmonth, true)) {
@@ -411,7 +411,7 @@ class SandClock
         } elseif (!empty($dayofweek)) {
             #Check if week is suitable
             for ($i = 0; $i <= 7; $i++) {
-                $timestampNew = $dateTime->modify('+'.($i * 86400).' seconds');
+                $timestampNew = $dateTime->modify('+'.$i.' days');
                 $weekNumber = (int)$timestampNew->format('N');
                 if (in_array($weekNumber, $dayofweek, true)) {
                     return $timestampNew;
@@ -420,7 +420,7 @@ class SandClock
         } elseif (!empty($dayofmonth)) {
             #Check if month is suitable
             for ($i = 0; $i <= 52; $i++) {
-                $timestampNew = $dateTime->modify('+'.($i * 604800).' seconds');
+                $timestampNew = $dateTime->modify('+'.$i.' weeks');
                 $monthNumber = (int)$timestampNew->format('j');
                 if (in_array($monthNumber, $dayofmonth, true)) {
                     return $timestampNew;
