@@ -387,42 +387,42 @@ class SandClock
     /**
      * Function to suggest next day that satisfies day of week/month restrictions based on the provided timestamp
      *
-     * @param string|float|int|\DateTime|\DateTimeImmutable|null $timestamp  Timestamp to start with
-     * @param int[]                                              $dayOfWeek  List of allowed days of the week
-     * @param int[]                                              $dayOfMonth List of allowed days of the month
+     * @param string|float|int|\DateTime|\DateTimeImmutable|null $timestamp    Timestamp to start with
+     * @param int[]                                              $day_of_week  List of allowed days of the week
+     * @param int[]                                              $day_of_month List of allowed days of the month
      *
      * @return \DateTimeImmutable
      * @throws \DateMalformedStringException
      */
-    public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $dayOfWeek, array $dayOfMonth): \DateTimeImmutable
+    public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
     {
         $dateTime = self::valueToDateTime($timestamp);
         #Split is done to slightly improve performance
-        if (!empty($dayOfWeek) && !empty($dayOfMonth)) {
+        if (!empty($day_of_week) && !empty($day_of_month)) {
             #Check if week is suitable
             for ($i = 0; $i <= 366; $i++) {
                 $timestampNew = $dateTime->modify('+'.$i.' days');
                 $weekNumber = (int)$timestampNew->format('N');
                 $monthNumber = (int)$timestampNew->format('j');
-                if (in_array($weekNumber, $dayOfWeek, true) && in_array($monthNumber, $dayOfMonth, true)) {
+                if (in_array($weekNumber, $day_of_week, true) && in_array($monthNumber, $day_of_month, true)) {
                     return $timestampNew;
                 }
             }
-        } elseif (!empty($dayOfWeek)) {
+        } elseif (!empty($day_of_week)) {
             #Check if week is suitable
             for ($i = 0; $i <= 7; $i++) {
                 $timestampNew = $dateTime->modify('+'.$i.' days');
                 $weekNumber = (int)$timestampNew->format('N');
-                if (in_array($weekNumber, $dayOfWeek, true)) {
+                if (in_array($weekNumber, $day_of_week, true)) {
                     return $timestampNew;
                 }
             }
-        } elseif (!empty($dayOfMonth)) {
+        } elseif (!empty($day_of_month)) {
             #Check if the month is suitable
             for ($i = 0; $i <= 52; $i++) {
                 $timestampNew = $dateTime->modify('+'.$i.' weeks');
                 $monthNumber = (int)$timestampNew->format('j');
-                if (in_array($monthNumber, $dayOfMonth, true)) {
+                if (in_array($monthNumber, $day_of_month, true)) {
                     return $timestampNew;
                 }
             }
