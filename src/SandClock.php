@@ -10,7 +10,7 @@ use function is_string, in_array;
  */
 class SandClock
 {
-    public const array timeunits = [
+    public const array TIME_UNITS = [
         'seconds' => [
             'dependOn' => 'seconds',
             'power' => 1,
@@ -252,7 +252,7 @@ class SandClock
         }
         #Enforce lower case for consistency
         $lang = mb_strtolower($lang, 'UTF-8');
-        $units = self::timeunits;
+        $units = self::TIME_UNITS;
         #If using ISO 8601 duration format, remove unused units
         if ($iso) {
             unset($units['decades'], $units['centuries'], $units['millenniums'], $units['megannums'], $units['aeons']);
