@@ -12,7 +12,7 @@ class SandClock
 {
     public const array TIME_UNITS = [
         'seconds' => [
-            'dependOn' => 'seconds',
+            'depend_on' => 'seconds',
             'power' => 1,
             'lang' => [
                 'de' => ['Sekunde', 'Sekunden'],
@@ -27,7 +27,7 @@ class SandClock
             'value' => 0,
         ],
         'minutes' => [
-            'dependOn' => 'seconds',
+            'depend_on' => 'seconds',
             'power' => 60,
             'lang' => [
                 'de' => ['Minute', 'Minuten'],
@@ -42,7 +42,7 @@ class SandClock
             'value' => 0,
         ],
         'hours' => [
-            'dependOn' => 'minutes',
+            'depend_on' => 'minutes',
             'power' => 60,
             'lang' => [
                 'de' => ['Stunde', 'Stunden'],
@@ -57,7 +57,7 @@ class SandClock
             'value' => 0,
         ],
         'days' => [
-            'dependOn' => 'hours',
+            'depend_on' => 'hours',
             'power' => 24,
             'lang' => [
                 'de' => ['Tag', 'Tage'],
@@ -72,7 +72,7 @@ class SandClock
             'value' => 0,
         ],
         'years' => [
-            'dependOn' => 'days',
+            'depend_on' => 'days',
             'power' => 365,
             'lang' => [
                 'de' => ['Jahr', 'Jahre'],
@@ -87,7 +87,7 @@ class SandClock
             'value' => 0,
         ],
         'months' => [
-            'dependOn' => 'days',
+            'depend_on' => 'days',
             'power' => 30,
             'lang' => [
                 'de' => ['Monat', 'Monate'],
@@ -102,7 +102,7 @@ class SandClock
             'value' => 0,
         ],
         'weeks' => [
-            'dependOn' => 'days',
+            'depend_on' => 'days',
             'power' => 7,
             'lang' => [
                 'de' => ['Woche', 'Wochen'],
@@ -117,7 +117,7 @@ class SandClock
             'value' => 0,
         ],
         'decades' => [
-            'dependOn' => 'years',
+            'depend_on' => 'years',
             'power' => 10,
             'lang' => [
                 'de' => ['Jahrzehnt', 'Jahrzehnte'],
@@ -132,7 +132,7 @@ class SandClock
             'value' => 0,
         ],
         'centuries' => [
-            'dependOn' => 'decades',
+            'depend_on' => 'decades',
             'power' => 10,
             'lang' => [
                 'de' => ['Jahrhundert', 'Jahrhunderte'],
@@ -147,7 +147,7 @@ class SandClock
             'value' => 0,
         ],
         'millenniums' => [
-            'dependOn' => 'centuries',
+            'depend_on' => 'centuries',
             'power' => 10,
             'lang' => [
                 'de' => ['Jahrtausend', 'Jahrtausende'],
@@ -162,7 +162,7 @@ class SandClock
             'value' => 0,
         ],
         'megannums' => [
-            'dependOn' => 'millenniums',
+            'depend_on' => 'millenniums',
             'power' => 1000,
             'lang' => [
                 'de' => ['Megannum', 'Megannum'],
@@ -177,7 +177,7 @@ class SandClock
             'value' => 0,
         ],
         'aeons' => [
-            'dependOn' => 'megannums',
+            'depend_on' => 'megannums',
             'power' => 1000,
             'lang' => [
                 'de' => ['Äon', 'Äonen'],
@@ -196,14 +196,14 @@ class SandClock
     /**
      * Format a value into a date
      *
-     * @param string|float|int|\DateTime|\DateTimeImmutable|null $time     Value to format
-     * @param string                                             $dtFormat Expected format
+     * @param string|float|int|\DateTime|\DateTimeImmutable|null $time      Value to format
+     * @param string                                             $dt_format Expected format
      *
      * @return string
      */
-    public static function format(string|float|int|\DateTime|\DateTimeImmutable|null $time = null, string $dtFormat = 'Y-m-d H:i:s.u'): string
+    public static function format(string|float|int|\DateTime|\DateTimeImmutable|null $time = null, string $dt_format = 'Y-m-d H:i:s.u'): string
     {
-        return self::valueToDateTime($time)->format($dtFormat);
+        return self::valueToDateTime($time)->format($dt_format);
     }
     
     /**
@@ -230,7 +230,7 @@ class SandClock
             } catch (\Throwable) {
                 throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
             }
-        } elseif (!\is_int($time) && !\is_float($time)) {
+        } elseif (!is_int($time) && !is_float($time)) {
             throw new \UnexpectedValueException('Time provided is not of supported value type.');
         }
         return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')));
@@ -258,7 +258,7 @@ class SandClock
             unset($units['decades'], $units['centuries'], $units['millenniums'], $units['megannums'], $units['aeons']);
         }
         #Check if the language is supported
-        if (!\array_key_exists($lang, $units['seconds']['lang'])) {
+        if (!array_key_exists($lang, $units['seconds']['lang'])) {
             throw new \UnexpectedValueException('Unsupported language (`'.$lang.'`).');
         }
         $result = '';
@@ -268,15 +268,15 @@ class SandClock
                 $units[$type]['value'] = (float)$seconds;
             } else {
                 #Calculate current unit type value based on predefined power of the dependant
-                $units[$type]['value'] = $units[$unit['dependOn']]['value'] / $unit['power'];
+                $units[$type]['value'] = $units[$unit['depend_on']]['value'] / $unit['power'];
                 if ($type === 'months') {
                     #Adjust the number of days, in case we have 30 days or more; each 30 days is 1 month
-                    while (floor($units[$type]['value']) > 0 && $units[$unit['dependOn']]['value'] >= $unit['power']) {
-                        $units[$unit['dependOn']]['value'] -= $unit['power'];
+                    while (floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power']) {
+                        $units[$unit['depend_on']]['value'] -= $unit['power'];
                     }
                     #Deduct the current unit value from the previous one to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
-                } elseif ($type !== 'weeks' || (floor($units[$type]['value']) > 0 && $units[$unit['dependOn']]['value'] >= $unit['power'])) {
-                    $units[$unit['dependOn']]['value'] = abs($units[$unit['dependOn']]['value'] - floor($units[$type]['value']) * $unit['power']);
+                } elseif ($type !== 'weeks' || (floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power'])) {
+                    $units[$unit['depend_on']]['value'] = abs($units[$unit['depend_on']]['value'] - floor($units[$type]['value']) * $unit['power']);
                 }
                 if ($type === 'weeks') {
                     #Adjust the number of weeks, in case we have 4 weeks or more; each 4 weeks is ~1 month
@@ -285,8 +285,8 @@ class SandClock
                     }
                 }
                 #Add the previous (already adjusted) unit to the resulting line. 'Years' and 'months' are skipped to prevent early addition of 'days', since the final value is known only on the 'weeks' cycle
-                if ($type !== 'years' && $type !== 'months' && floor($units[$unit['dependOn']]['value']) > 0) {
-                    $result = floor($units[$unit['dependOn']]['value']).($full === true ? ' '.(floor($units[$unit['dependOn']]['value']) > 1 ? $units[$unit['dependOn']]['lang'][$lang][1] : $units[$unit['dependOn']]['lang'][$lang][0]).' ' : ':').$result;
+                if ($type !== 'years' && $type !== 'months' && floor($units[$unit['depend_on']]['value']) > 0) {
+                    $result = floor($units[$unit['depend_on']]['value']).($full === true ? ' '.(floor($units[$unit['depend_on']]['value']) > 1 ? $units[$unit['depend_on']]['lang'][$lang][1] : $units[$unit['depend_on']]['lang'][$lang][0]).' ' : ':').$result;
                 }
                 if ($type === 'weeks') {
                     #Adding weeks
@@ -300,7 +300,7 @@ class SandClock
                 }
                 #Special for aeons, since last iteration
                 if ($type === 'aeons' && floor($units[$type]['value']) > 0) {
-                    $result = mb_rtrim(mb_trim(floor($units['aeons']['value']).($full ? ' '.(floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, encoding: 'UTF-8'), ':', 'UTF-8');
+                    $result = mb_rtrim(mb_trim(floor($units['aeons']['value']).($full ? ' '.(floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, null, 'UTF-8'), ':', 'UTF-8');
                 }
             }
         }
@@ -385,7 +385,7 @@ class SandClock
     }
     
     /**
-     * Function to suggest next day that satisfies day of week/month restrictions based on the provided timestamp
+     * Function to suggest the next day that satisfies day of week/month restrictions based on the provided timestamp
      *
      * @param string|float|int|\DateTime|\DateTimeImmutable|null $timestamp    Timestamp to start with
      * @param int[]                                              $day_of_week  List of allowed days of the week
@@ -396,37 +396,37 @@ class SandClock
      */
     public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
     {
-        $dateTime = self::valueToDateTime($timestamp);
+        $date_time = self::valueToDateTime($timestamp);
         #Split is done to slightly improve performance
         if (!empty($day_of_week) && !empty($day_of_month)) {
             #Check if week is suitable
-            for ($i = 0; $i <= 366; $i++) {
-                $timestampNew = $dateTime->modify('+'.$i.' days');
-                $weekNumber = (int)$timestampNew->format('N');
-                $monthNumber = (int)$timestampNew->format('j');
-                if (in_array($weekNumber, $day_of_week, true) && in_array($monthNumber, $day_of_month, true)) {
-                    return $timestampNew;
+            for ($iteration = 0; $iteration <= 366; $iteration++) {
+                $timestamp_new = $date_time->modify('+'.$iteration.' days');
+                $week_number = (int)$timestamp_new->format('N');
+                $month_number = (int)$timestamp_new->format('j');
+                if (in_array($week_number, $day_of_week, true) && in_array($month_number, $day_of_month, true)) {
+                    return $timestamp_new;
                 }
             }
         } elseif (!empty($day_of_week)) {
             #Check if week is suitable
-            for ($i = 0; $i <= 7; $i++) {
-                $timestampNew = $dateTime->modify('+'.$i.' days');
-                $weekNumber = (int)$timestampNew->format('N');
-                if (in_array($weekNumber, $day_of_week, true)) {
-                    return $timestampNew;
+            for ($iteration = 0; $iteration <= 7; $iteration++) {
+                $timestamp_new = $date_time->modify('+'.$iteration.' days');
+                $week_number = (int)$timestamp_new->format('N');
+                if (in_array($week_number, $day_of_week, true)) {
+                    return $timestamp_new;
                 }
             }
         } elseif (!empty($day_of_month)) {
             #Check if the month is suitable
-            for ($i = 0; $i <= 52; $i++) {
-                $timestampNew = $dateTime->modify('+'.$i.' weeks');
-                $monthNumber = (int)$timestampNew->format('j');
-                if (in_array($monthNumber, $day_of_month, true)) {
-                    return $timestampNew;
+            for ($iteration = 0; $iteration <= 52; $iteration++) {
+                $timestamp_new = $date_time->modify('+'.$iteration.' weeks');
+                $month_number = (int)$timestamp_new->format('j');
+                if (in_array($month_number, $day_of_month, true)) {
+                    return $timestamp_new;
                 }
             }
         }
-        return $dateTime;
+        return $date_time;
     }
 }
