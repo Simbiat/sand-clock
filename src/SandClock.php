@@ -220,9 +220,9 @@ class SandClock
             return $time;
         }
         if (empty($time)) {
-            $time = microtime(true);
-        } elseif (is_numeric($time)) {
-            $time = abs((int)$time);
+            $time = \microtime(true);
+        } elseif (\is_numeric($time)) {
+            $time = \abs((int)$time);
         }
         if (is_string($time)) {
             try {
@@ -230,10 +230,10 @@ class SandClock
             } catch (\Throwable) {
                 throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
             }
-        } elseif (!is_int($time) && !is_float($time)) {
+        } elseif (!\is_int($time) && !\is_float($time)) {
             throw new \UnexpectedValueException('Time provided is not of supported value type.');
         }
-        return (\DateTimeImmutable::createFromFormat('U.u', number_format($time, 6, '.', '')));
+        return (\DateTimeImmutable::createFromFormat('U.u', \number_format($time, 6, '.', '')));
     }
     
     /**
@@ -247,7 +247,7 @@ class SandClock
      */
     public static function seconds(string|float|int $seconds = 0, bool $full = true, string $lang = 'en', bool $iso = false): string
     {
-        if (!is_numeric($seconds)) {
+        if (!\is_numeric($seconds)) {
             throw new \UnexpectedValueException('Seconds provided is not numeric.');
         }
         #Enforce lower case for consistency
@@ -258,7 +258,7 @@ class SandClock
             unset($units['decades'], $units['centuries'], $units['millenniums'], $units['megannums'], $units['aeons']);
         }
         #Check if the language is supported
-        if (!array_key_exists($lang, $units['seconds']['lang'])) {
+        if (!\array_key_exists($lang, $units['seconds']['lang'])) {
             throw new \UnexpectedValueException('Unsupported language (`'.$lang.'`).');
         }
         $result = '';
@@ -271,36 +271,36 @@ class SandClock
                 $units[$type]['value'] = $units[$unit['depend_on']]['value'] / $unit['power'];
                 if ($type === 'months') {
                     #Adjust the number of days, in case we have 30 days or more; each 30 days is 1 month
-                    while (floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power']) {
+                    while (\floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power']) {
                         $units[$unit['depend_on']]['value'] -= $unit['power'];
                     }
                     #Deduct the current unit value from the previous one to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
-                } elseif ($type !== 'weeks' || (floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power'])) {
-                    $units[$unit['depend_on']]['value'] = abs($units[$unit['depend_on']]['value'] - floor($units[$type]['value']) * $unit['power']);
+                } elseif ($type !== 'weeks' || (\floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power'])) {
+                    $units[$unit['depend_on']]['value'] = \abs($units[$unit['depend_on']]['value'] - \floor($units[$type]['value']) * $unit['power']);
                 }
                 if ($type === 'weeks') {
                     #Adjust the number of weeks, in case we have 4 weeks or more; each 4 weeks is ~1 month
-                    while (floor($units['months']['value']) > 0 && $units[$type]['value'] >= 4) {
+                    while (\floor($units['months']['value']) > 0 && $units[$type]['value'] >= 4) {
                         $units[$type]['value'] -= 4;
                     }
                 }
                 #Add the previous (already adjusted) unit to the resulting line. 'Years' and 'months' are skipped to prevent early addition of 'days', since the final value is known only on the 'weeks' cycle
-                if ($type !== 'years' && $type !== 'months' && floor($units[$unit['depend_on']]['value']) > 0) {
-                    $result = floor($units[$unit['depend_on']]['value']).($full === true ? ' '.(floor($units[$unit['depend_on']]['value']) > 1 ? $units[$unit['depend_on']]['lang'][$lang][1] : $units[$unit['depend_on']]['lang'][$lang][0]).' ' : ':').$result;
+                if ($type !== 'years' && $type !== 'months' && \floor($units[$unit['depend_on']]['value']) > 0) {
+                    $result = \floor($units[$unit['depend_on']]['value']).($full === true ? ' '.(\floor($units[$unit['depend_on']]['value']) > 1 ? $units[$unit['depend_on']]['lang'][$lang][1] : $units[$unit['depend_on']]['lang'][$lang][0]).' ' : ':').$result;
                 }
                 if ($type === 'weeks') {
                     #Adding weeks
-                    if (floor($units[$type]['value']) > 0) {
-                        $result = floor($units['weeks']['value']).($full ? ' '.(floor($units['weeks']['value']) > 1 ? $units['weeks']['lang'][$lang][1] : $units['weeks']['lang'][$lang][0]).' ' : ':').$result;
+                    if (\floor($units[$type]['value']) > 0) {
+                        $result = \floor($units['weeks']['value']).($full ? ' '.(\floor($units['weeks']['value']) > 1 ? $units['weeks']['lang'][$lang][1] : $units['weeks']['lang'][$lang][0]).' ' : ':').$result;
                     }
                     #Adding months
-                    if (floor($units['months']['value']) > 0) {
-                        $result = floor($units['months']['value']).($full ? ' '.(floor($units['months']['value']) > 1 ? $units['months']['lang'][$lang][1] : $units['months']['lang'][$lang][0]).' ' : ':').$result;
+                    if (\floor($units['months']['value']) > 0) {
+                        $result = \floor($units['months']['value']).($full ? ' '.(\floor($units['months']['value']) > 1 ? $units['months']['lang'][$lang][1] : $units['months']['lang'][$lang][0]).' ' : ':').$result;
                     }
                 }
                 #Special for aeons, since last iteration
-                if ($type === 'aeons' && floor($units[$type]['value']) > 0) {
-                    $result = mb_rtrim(mb_trim(floor($units['aeons']['value']).($full ? ' '.(floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, null, 'UTF-8'), ':', 'UTF-8');
+                if ($type === 'aeons' && \floor($units[$type]['value']) > 0) {
+                    $result = mb_rtrim(mb_trim(\floor($units['aeons']['value']).($full ? ' '.(\floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, null, 'UTF-8'), ':', 'UTF-8');
                 }
             }
         }
@@ -311,7 +311,7 @@ class SandClock
                 $result = '0'.($full ? ' seconds' : '');
             }
         } elseif ($iso) {
-            $result = 'P'.floor($units['years']['value']).'Y'.floor($units['months']['value']).'M'.floor($units['weeks']['value']).'W'.floor($units['days']['value']).'DT'.floor($units['hours']['value']).'H'.floor($units['minutes']['value']).'M'.floor($units['seconds']['value']).'S';
+            $result = 'P'.\floor($units['years']['value']).'Y'.\floor($units['months']['value']).'M'.\floor($units['weeks']['value']).'W'.\floor($units['days']['value']).'DT'.\floor($units['hours']['value']).'H'.\floor($units['minutes']['value']).'M'.\floor($units['seconds']['value']).'S';
         }
         return $result;
     }
@@ -328,7 +328,7 @@ class SandClock
     {
         #Validate and convert timezone if any of them is a string
         if (is_string($from)) {
-            if (!in_array($from, timezone_identifiers_list(), true)) {
+            if (!in_array($from, \timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
             }
             try {
@@ -338,7 +338,7 @@ class SandClock
             }
         }
         if (is_string($to)) {
-            if (!in_array($to, timezone_identifiers_list(), true)) {
+            if (!in_array($to, \timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$to.'` is not a supported timezone');
             }
             try {
@@ -358,7 +358,7 @@ class SandClock
                 throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
             }
             try {
-                if (preg_match('/\d{10}/', (string)$time) === 1) {
+                if (\preg_match('/\d{10}/', (string)$time) === 1) {
                     $datetime = new \DateTime(timezone: $from);
                     $datetime->setTimestamp((int)$time);
                 } else {
