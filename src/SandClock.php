@@ -222,7 +222,7 @@ class SandClock
         if (empty($time)) {
             $time = \microtime(true);
         } elseif (\is_numeric($time)) {
-            $time = \abs((int)$time);
+            $time = \abs((float)$time);
         }
         if (is_string($time)) {
             try {
