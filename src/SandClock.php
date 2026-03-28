@@ -219,6 +219,7 @@ class SandClock
         if ($time instanceof \DateTimeImmutable) {
             return $time;
         }
+        /** @noinspection IsEmptyFunctionUsageInspection Valid since multiple types are possible */
         if (empty($time)) {
             $time = \microtime(true);
         } elseif (\is_numeric($time)) {
@@ -304,7 +305,7 @@ class SandClock
                 }
             }
         }
-        if (empty($result)) {
+        if ($result === '') {
             if ($iso) {
                 $result = 'P0Y0M0W0DT0H0M0S';
             } else {
@@ -354,7 +355,7 @@ class SandClock
             $datetime = clone $time;
         } else {
             #If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get the default one during conversion, which may not be desired
-            if (empty($from)) {
+            if ($from === '' || $from === null) {
                 throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
             }
             try {
@@ -373,23 +374,21 @@ class SandClock
                 throw new \RuntimeException('Failed to create DateTime object from `'.$time.'`', previous: $throwable);
             }
         }
-        #If somehow we do not have the original timezone in the `DateTime` object at this point - something went wrong.
+        #If somehow we do not have the original timezone in the `DateTime` object at this point, something went wrong.
         #Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
         if (!$datetime->getTimezone()) {
             throw new \UnexpectedValueException('No TimeZone found in DateTime object');
         }
-        #Change the timezone
-        $datetime->setTimezone($to);
-        #Return
-        return $datetime;
+        #Change the timezone and return
+        return $datetime->setTimezone($to);
     }
     
     /**
-     * Function to suggest the next day that satisfies day of week/month restrictions based on the provided timestamp
+     * Function to suggest the next day that satisfies the day of week/month restrictions based on the provided timestamp
      *
      * @param string|float|int|\DateTime|\DateTimeImmutable|null $timestamp    Timestamp to start with
-     * @param int[]                                              $day_of_week  List of allowed days of the week
-     * @param int[]                                              $day_of_month List of allowed days of the month
+     * @param array                                              $day_of_week  List of allowed days of the week
+     * @param array                                              $day_of_month List of allowed days of the month
      *
      * @return \DateTimeImmutable
      * @throws \DateMalformedStringException
@@ -397,8 +396,19 @@ class SandClock
     public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
     {
         $date_time = self::valueToDateTime($timestamp);
+        #Validate arrays for days
+        foreach ($day_of_week as $day) {
+            if (!\is_int($day) || $day < 1 || $day > 7) {
+                throw new \InvalidArgumentException('`'.$day.'` is not a valid day of week number');
+            }
+        }
+        foreach ($day_of_month as $day) {
+            if (!\is_int($day) || $day < 1 || $day > 31) {
+                throw new \InvalidArgumentException('`'.$day.'` is not a valid day of month number');
+            }
+        }
         #Split is done to slightly improve performance
-        if (!empty($day_of_week) && !empty($day_of_month)) {
+        if (\count($day_of_week) !== 0 && \count($day_of_month) !== 0) {
             #Check if week is suitable
             for ($iteration = 0; $iteration <= 366; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
@@ -408,7 +418,7 @@ class SandClock
                     return $timestamp_new;
                 }
             }
-        } elseif (!empty($day_of_week)) {
+        } elseif (\count($day_of_week) !== 0) {
             #Check if week is suitable
             for ($iteration = 0; $iteration <= 7; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
@@ -417,7 +427,7 @@ class SandClock
                     return $timestamp_new;
                 }
             }
-        } elseif (!empty($day_of_month)) {
+        } elseif (\count($day_of_month) !== 0) {
             #Check if the month is suitable
             for ($iteration = 0; $iteration <= 52; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' weeks');
