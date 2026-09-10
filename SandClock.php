@@ -192,7 +192,7 @@ class SandClock
             'value' => 0,
         ],
     ];
-    
+
     /**
      * Format a value into a date
      *
@@ -205,7 +205,7 @@ class SandClock
     {
         return self::valueToDateTime($time)->format($dt_format);
     }
-    
+
     /**
      * @param string|float|int|\DateTime|\DateTimeImmutable|null $time Value to convert to DateTimeImmutable
      *
@@ -236,7 +236,7 @@ class SandClock
         }
         return (\DateTimeImmutable::createFromFormat('U.u', \number_format($time, 6, '.', '')));
     }
-    
+
     /**
      * Convert seconds to time left in format like `1 aeon 1 millennium 5 centuries 8 decades 5 years 6 months 1 week 1 day 7 hours 10 minutes 52 seconds`
      * @param string|float|int $seconds Number of seconds
@@ -277,7 +277,7 @@ class SandClock
                     }
                     #Deduct the current unit value from the previous one to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
                 } elseif ($type !== 'weeks' || (\floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power'])) {
-                    $units[$unit['depend_on']]['value'] = \abs($units[$unit['depend_on']]['value'] - \floor($units[$type]['value']) * $unit['power']);
+                    $units[$unit['depend_on']]['value'] = \abs($units[$unit['depend_on']]['value'] - (\floor($units[$type]['value']) * $unit['power']));
                 }
                 if ($type === 'weeks') {
                     #Adjust the number of weeks, in case we have 4 weeks or more; each 4 weeks is ~1 month
@@ -316,7 +316,7 @@ class SandClock
         }
         return $result;
     }
-    
+
     /**
      * Convert timezone
      * @param int|string|\DateTime|\DateTimeImmutable $time Timestamp value
@@ -382,7 +382,7 @@ class SandClock
         #Change the timezone and return
         return $datetime->setTimezone($to);
     }
-    
+
     /**
      * Function to suggest the next day that satisfies the day of week/month restrictions based on the provided timestamp
      *
