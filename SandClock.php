@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 
 namespace Simbiat;
 
@@ -251,55 +252,55 @@ class SandClock
         if (!\is_numeric($seconds)) {
             throw new \UnexpectedValueException('Seconds provided is not numeric.');
         }
-        #Enforce lower case for consistency
+        // Enforce lower case for consistency
         $lang = mb_strtolower($lang, 'UTF-8');
         $units = self::TIME_UNITS;
-        #If using ISO 8601 duration format, remove unused units
+        // If using ISO 8601 duration format, remove unused units
         if ($iso) {
             unset($units['decades'], $units['centuries'], $units['millenniums'], $units['megannums'], $units['aeons']);
         }
-        #Check if the language is supported
+        // Check if the language is supported
         if (!\array_key_exists($lang, $units['seconds']['lang'])) {
             throw new \UnexpectedValueException('Unsupported language (`'.$lang.'`).');
         }
         $result = '';
         foreach ($units as $type => $unit) {
             if ($type === 'seconds') {
-                #Just adding seconds to the array to work with them going forward and explicitly converting to float (which is larger than integer) to prevent implicit conversions in the following functions
+                // Just adding seconds to the array to work with them going forward and explicitly converting to float (which is larger than integer) to prevent implicit conversions in the following functions
                 $units[$type]['value'] = (float)$seconds;
             } else {
-                #Calculate current unit type value based on predefined power of the dependant
+                // Calculate current unit type value based on predefined power of the dependant
                 $units[$type]['value'] = $units[$unit['depend_on']]['value'] / $unit['power'];
                 if ($type === 'months') {
-                    #Adjust the number of days, in case we have 30 days or more; each 30 days is 1 month
+                    // Adjust the number of days, in case we have 30 days or more; each 30 days is 1 month
                     while (\floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power']) {
                         $units[$unit['depend_on']]['value'] -= $unit['power'];
                     }
-                    #Deduct the current unit value from the previous one to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
+                    // Deduct the current unit value from the previous one to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
                 } elseif ($type !== 'weeks' || (\floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power'])) {
                     $units[$unit['depend_on']]['value'] = \abs($units[$unit['depend_on']]['value'] - (\floor($units[$type]['value']) * $unit['power']));
                 }
                 if ($type === 'weeks') {
-                    #Adjust the number of weeks, in case we have 4 weeks or more; each 4 weeks is ~1 month
+                    // Adjust the number of weeks, in case we have 4 weeks or more; each 4 weeks is ~1 month
                     while (\floor($units['months']['value']) > 0 && $units[$type]['value'] >= 4) {
                         $units[$type]['value'] -= 4;
                     }
                 }
-                #Add the previous (already adjusted) unit to the resulting line. 'Years' and 'months' are skipped to prevent early addition of 'days', since the final value is known only on the 'weeks' cycle
+                // Add the previous (already adjusted) unit to the resulting line. 'Years' and 'months' are skipped to prevent early addition of 'days', since the final value is known only on the 'weeks' cycle
                 if ($type !== 'years' && $type !== 'months' && \floor($units[$unit['depend_on']]['value']) > 0) {
                     $result = \floor($units[$unit['depend_on']]['value']).($full === true ? ' '.(\floor($units[$unit['depend_on']]['value']) > 1 ? $units[$unit['depend_on']]['lang'][$lang][1] : $units[$unit['depend_on']]['lang'][$lang][0]).' ' : ':').$result;
                 }
                 if ($type === 'weeks') {
-                    #Adding weeks
+                    // Adding weeks
                     if (\floor($units[$type]['value']) > 0) {
                         $result = \floor($units['weeks']['value']).($full ? ' '.(\floor($units['weeks']['value']) > 1 ? $units['weeks']['lang'][$lang][1] : $units['weeks']['lang'][$lang][0]).' ' : ':').$result;
                     }
-                    #Adding months
+                    // Adding months
                     if (\floor($units['months']['value']) > 0) {
                         $result = \floor($units['months']['value']).($full ? ' '.(\floor($units['months']['value']) > 1 ? $units['months']['lang'][$lang][1] : $units['months']['lang'][$lang][0]).' ' : ':').$result;
                     }
                 }
-                #Special for aeons, since last iteration
+                // Special for aeons, since last iteration
                 if ($type === 'aeons' && \floor($units[$type]['value']) > 0) {
                     $result = mb_rtrim(mb_trim(\floor($units['aeons']['value']).($full ? ' '.(\floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, null, 'UTF-8'), ':', 'UTF-8');
                 }
@@ -327,7 +328,7 @@ class SandClock
      */
     public static function convertTimezone(int|string|\DateTime|\DateTimeImmutable $time, string|\DateTimeZone|null $from = null, string|\DateTimeZone $to = 'UTC'): \DateTime
     {
-        #Validate and convert timezone if any of them is a string
+        // Validate and convert timezone if any of them is a string
         if (is_string($from)) {
             if (!in_array($from, \timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
@@ -348,13 +349,13 @@ class SandClock
                 throw new \UnexpectedValueException('Failed to convert `'.$to.'` to time');
             }
         }
-        #Set the object depending on what we got
+        // Set the object depending on what we got
         if ($time instanceof \DateTimeImmutable) {
             $datetime = $time;
         } elseif ($time instanceof \DateTime) {
             $datetime = clone $time;
         } else {
-            #If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get the default one during conversion, which may not be desired
+            // If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get the default one during conversion, which may not be desired
             if ($from === '' || $from === null) {
                 throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
             }
@@ -374,12 +375,12 @@ class SandClock
                 throw new \RuntimeException('Failed to create DateTime object from `'.$time.'`', previous: $throwable);
             }
         }
-        #If somehow we do not have the original timezone in the `DateTime` object at this point, something went wrong.
-        #Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
+        // If somehow we do not have the original timezone in the `DateTime` object at this point, something went wrong.
+        // Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
         if (!$datetime->getTimezone()) {
             throw new \UnexpectedValueException('No TimeZone found in DateTime object');
         }
-        #Change the timezone and return
+        // Change the timezone and return
         return $datetime->setTimezone($to);
     }
 
@@ -396,7 +397,7 @@ class SandClock
     public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
     {
         $date_time = self::valueToDateTime($timestamp);
-        #Validate arrays for days
+        // Validate arrays for days
         foreach ($day_of_week as $day) {
             if (!\is_int($day) || $day < 1 || $day > 7) {
                 throw new \InvalidArgumentException('`'.$day.'` is not a valid day of week number');
@@ -407,9 +408,9 @@ class SandClock
                 throw new \InvalidArgumentException('`'.$day.'` is not a valid day of month number');
             }
         }
-        #Split is done to slightly improve performance
+        // Split is done to slightly improve performance
         if (\count($day_of_week) !== 0 && \count($day_of_month) !== 0) {
-            #Check if week is suitable
+            // Check if week is suitable
             for ($iteration = 0; $iteration <= 366; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
                 $week_number = (int)$timestamp_new->format('N');
@@ -419,7 +420,7 @@ class SandClock
                 }
             }
         } elseif (\count($day_of_week) !== 0) {
-            #Check if week is suitable
+            // Check if week is suitable
             for ($iteration = 0; $iteration <= 7; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
                 $week_number = (int)$timestamp_new->format('N');
@@ -428,7 +429,7 @@ class SandClock
                 }
             }
         } elseif (\count($day_of_month) !== 0) {
-            #Check if the month is suitable
+            // Check if the month is suitable
             for ($iteration = 0; $iteration <= 52; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' weeks');
                 $month_number = (int)$timestamp_new->format('j');
