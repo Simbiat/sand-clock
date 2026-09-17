@@ -224,9 +224,9 @@ class SandClock
         if (empty($time)) {
             $time = \microtime(true);
         } elseif (\is_numeric($time)) {
-            $time = \abs((float)$time);
+            $time = \abs((float) $time);
         }
-        if (is_string($time)) {
+        if (\is_string($time)) {
             try {
                 return new \DateTimeImmutable($time);
             } catch (\Throwable) {
@@ -253,7 +253,7 @@ class SandClock
             throw new \UnexpectedValueException('Seconds provided is not numeric.');
         }
         // Enforce lower case for consistency
-        $lang = mb_strtolower($lang, 'UTF-8');
+        $lang = \mb_strtolower($lang, 'UTF-8');
         $units = self::TIME_UNITS;
         // If using ISO 8601 duration format, remove unused units
         if ($iso) {
@@ -267,7 +267,7 @@ class SandClock
         foreach ($units as $type => $unit) {
             if ($type === 'seconds') {
                 // Just adding seconds to the array to work with them going forward and explicitly converting to float (which is larger than integer) to prevent implicit conversions in the following functions
-                $units[$type]['value'] = (float)$seconds;
+                $units[$type]['value'] = (float) $seconds;
             } else {
                 // Calculate current unit type value based on predefined power of the dependant
                 $units[$type]['value'] = $units[$unit['depend_on']]['value'] / $unit['power'];
@@ -302,7 +302,7 @@ class SandClock
                 }
                 // Special for aeons, since last iteration
                 if ($type === 'aeons' && \floor($units[$type]['value']) > 0) {
-                    $result = mb_rtrim(mb_trim(\floor($units['aeons']['value']).($full ? ' '.(\floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, null, 'UTF-8'), ':', 'UTF-8');
+                    $result = \mb_rtrim(\mb_trim(\floor($units['aeons']['value']).($full ? ' '.(\floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, null, 'UTF-8'), ':', 'UTF-8');
                 }
             }
         }
@@ -329,8 +329,8 @@ class SandClock
     public static function convertTimezone(int|string|\DateTime|\DateTimeImmutable $time, string|\DateTimeZone|null $from = null, string|\DateTimeZone $to = 'UTC'): \DateTime
     {
         // Validate and convert timezone if any of them is a string
-        if (is_string($from)) {
-            if (!in_array($from, \timezone_identifiers_list(), true)) {
+        if (\is_string($from)) {
+            if (!\in_array($from, \timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
             }
             try {
@@ -339,8 +339,8 @@ class SandClock
                 throw new \UnexpectedValueException('Failed to convert `'.$from.'` to time');
             }
         }
-        if (is_string($to)) {
-            if (!in_array($to, \timezone_identifiers_list(), true)) {
+        if (\is_string($to)) {
+            if (!\in_array($to, \timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$to.'` is not a supported timezone');
             }
             try {
@@ -360,15 +360,15 @@ class SandClock
                 throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
             }
             try {
-                if (\preg_match('/\d{10}/', (string)$time) === 1) {
+                if (\preg_match('/\d{10}/', (string) $time) === 1) {
                     $datetime = new \DateTime(timezone: $from);
-                    $datetime->setTimestamp((int)$time);
+                    $datetime->setTimestamp((int) $time);
                 } else {
                     try {
                         $datetime = new \DateTime($time, $from);
                     } catch (\Throwable) {
                         $datetime = new \DateTime(timezone: $from);
-                        $datetime->setTimestamp((int)$time);
+                        $datetime->setTimestamp((int) $time);
                     }
                 }
             } catch (\Throwable $throwable) {
@@ -413,9 +413,9 @@ class SandClock
             // Check if week is suitable
             for ($iteration = 0; $iteration <= 366; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
-                $week_number = (int)$timestamp_new->format('N');
-                $month_number = (int)$timestamp_new->format('j');
-                if (in_array($week_number, $day_of_week, true) && in_array($month_number, $day_of_month, true)) {
+                $week_number = (int) $timestamp_new->format('N');
+                $month_number = (int) $timestamp_new->format('j');
+                if (\in_array($week_number, $day_of_week, true) && \in_array($month_number, $day_of_month, true)) {
                     return $timestamp_new;
                 }
             }
@@ -423,8 +423,8 @@ class SandClock
             // Check if week is suitable
             for ($iteration = 0; $iteration <= 7; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
-                $week_number = (int)$timestamp_new->format('N');
-                if (in_array($week_number, $day_of_week, true)) {
+                $week_number = (int) $timestamp_new->format('N');
+                if (\in_array($week_number, $day_of_week, true)) {
                     return $timestamp_new;
                 }
             }
@@ -432,8 +432,8 @@ class SandClock
             // Check if the month is suitable
             for ($iteration = 0; $iteration <= 52; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' weeks');
-                $month_number = (int)$timestamp_new->format('j');
-                if (in_array($month_number, $day_of_month, true)) {
+                $month_number = (int) $timestamp_new->format('j');
+                if (\in_array($month_number, $day_of_month, true)) {
                     return $timestamp_new;
                 }
             }
