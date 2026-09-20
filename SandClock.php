@@ -232,14 +232,19 @@ class SandClock
             } catch (\Throwable) {
                 throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
             }
-        } elseif (!\is_int($time) && !\is_float($time)) {
+        } elseif (
+            !\is_int($time)
+            && !\is_float($time)
+        ) {
             throw new \UnexpectedValueException('Time provided is not of supported value type.');
         }
-        return (\DateTimeImmutable::createFromFormat('U.u', \number_format($time, 6, '.', '')));
+
+        return \DateTimeImmutable::createFromFormat('U.u', \number_format($time, 6, '.', ''));
     }
 
     /**
      * Convert seconds to time left in format like `1 aeon 1 millennium 5 centuries 8 decades 5 years 6 months 1 week 1 day 7 hours 10 minutes 52 seconds`
+     *
      * @param string|float|int $seconds Number of seconds
      * @param bool             $full    Whether to use full words (`true`) or just `:` separator (`false`, output will look like `1:1:5:8:5:6:1:1:7:10:52`)
      * @param string           $lang    Language to use
@@ -273,21 +278,37 @@ class SandClock
                 $units[$type]['value'] = $units[$unit['depend_on']]['value'] / $unit['power'];
                 if ($type === 'months') {
                     // Adjust the number of days, in case we have 30 days or more; each 30 days is 1 month
-                    while (\floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power']) {
+                    while (
+                        \floor($units[$type]['value']) > 0
+                        && $units[$unit['depend_on']]['value'] >= $unit['power']
+                    ) {
                         $units[$unit['depend_on']]['value'] -= $unit['power'];
                     }
                     // Deduct the current unit value from the previous one to retain only the 'remainder' of it. 'Weeks' have an extra check for consistency between weeks, months and days
-                } elseif ($type !== 'weeks' || (\floor($units[$type]['value']) > 0 && $units[$unit['depend_on']]['value'] >= $unit['power'])) {
+                } elseif (
+                    $type !== 'weeks'
+                    || (
+                        \floor($units[$type]['value']) > 0
+                        && $units[$unit['depend_on']]['value'] >= $unit['power']
+                    )
+                ) {
                     $units[$unit['depend_on']]['value'] = \abs($units[$unit['depend_on']]['value'] - (\floor($units[$type]['value']) * $unit['power']));
                 }
                 if ($type === 'weeks') {
                     // Adjust the number of weeks, in case we have 4 weeks or more; each 4 weeks is ~1 month
-                    while (\floor($units['months']['value']) > 0 && $units[$type]['value'] >= 4) {
+                    while (
+                        \floor($units['months']['value']) > 0
+                        && $units[$type]['value'] >= 4
+                    ) {
                         $units[$type]['value'] -= 4;
                     }
                 }
                 // Add the previous (already adjusted) unit to the resulting line. 'Years' and 'months' are skipped to prevent early addition of 'days', since the final value is known only on the 'weeks' cycle
-                if ($type !== 'years' && $type !== 'months' && \floor($units[$unit['depend_on']]['value']) > 0) {
+                if (
+                    $type !== 'years'
+                    && $type !== 'months'
+                    && \floor($units[$unit['depend_on']]['value']) > 0
+                ) {
                     $result = \floor($units[$unit['depend_on']]['value']).($full === true ? ' '.(\floor($units[$unit['depend_on']]['value']) > 1 ? $units[$unit['depend_on']]['lang'][$lang][1] : $units[$unit['depend_on']]['lang'][$lang][0]).' ' : ':').$result;
                 }
                 if ($type === 'weeks') {
@@ -301,7 +322,10 @@ class SandClock
                     }
                 }
                 // Special for aeons, since last iteration
-                if ($type === 'aeons' && \floor($units[$type]['value']) > 0) {
+                if (
+                    $type === 'aeons'
+                    && \floor($units[$type]['value']) > 0
+                ) {
                     $result = \mb_rtrim(\mb_trim(\floor($units['aeons']['value']).($full ? ' '.(\floor($units['aeons']['value']) > 1 ? $units['aeons']['lang'][$lang][1] : $units['aeons']['lang'][$lang][0]).' ' : ':').$result, null, 'UTF-8'), ':', 'UTF-8');
                 }
             }
@@ -315,11 +339,13 @@ class SandClock
         } elseif ($iso) {
             $result = 'P'.\floor($units['years']['value']).'Y'.\floor($units['months']['value']).'M'.\floor($units['weeks']['value']).'W'.\floor($units['days']['value']).'DT'.\floor($units['hours']['value']).'H'.\floor($units['minutes']['value']).'M'.\floor($units['seconds']['value']).'S';
         }
+
         return $result;
     }
 
     /**
      * Convert timezone
+     *
      * @param int|string|\DateTime|\DateTimeImmutable $time Timestamp value
      * @param string|\DateTimeZone|null               $from Timezone to convert from. Optional if `\DateTime` or `\DateTimeImmutable` is provided
      * @param string|\DateTimeZone                    $to   Timezone to convert to. `UTC` by default
@@ -356,7 +382,10 @@ class SandClock
             $datetime = clone $time;
         } else {
             // If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get the default one during conversion, which may not be desired
-            if ($from === '' || $from === null) {
+            if (
+                $from === ''
+                || $from === null
+            ) {
                 throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
             }
             try {
@@ -380,6 +409,7 @@ class SandClock
         if (!$datetime->getTimezone()) {
             throw new \UnexpectedValueException('No TimeZone found in DateTime object');
         }
+
         // Change the timezone and return
         return $datetime->setTimezone($to);
     }
@@ -392,6 +422,7 @@ class SandClock
      * @param array                                              $day_of_month List of allowed days of the month
      *
      * @return \DateTimeImmutable
+     *
      * @throws \DateMalformedStringException
      */
     public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
@@ -399,23 +430,37 @@ class SandClock
         $date_time = self::valueToDateTime($timestamp);
         // Validate arrays for days
         foreach ($day_of_week as $day) {
-            if (!\is_int($day) || $day < 1 || $day > 7) {
+            if (
+                !\is_int($day)
+                || $day < 1
+                || $day > 7
+            ) {
                 throw new \InvalidArgumentException('`'.$day.'` is not a valid day of week number');
             }
         }
         foreach ($day_of_month as $day) {
-            if (!\is_int($day) || $day < 1 || $day > 31) {
+            if (
+                !\is_int($day)
+                || $day < 1
+                || $day > 31
+            ) {
                 throw new \InvalidArgumentException('`'.$day.'` is not a valid day of month number');
             }
         }
         // Split is done to slightly improve performance
-        if (\count($day_of_week) !== 0 && \count($day_of_month) !== 0) {
+        if (
+            \count($day_of_week) !== 0
+            && \count($day_of_month) !== 0
+        ) {
             // Check if week is suitable
             for ($iteration = 0; $iteration <= 366; $iteration++) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
                 $week_number = (int) $timestamp_new->format('N');
                 $month_number = (int) $timestamp_new->format('j');
-                if (\in_array($week_number, $day_of_week, true) && \in_array($month_number, $day_of_month, true)) {
+                if (
+                    \in_array($week_number, $day_of_week, true)
+                    && \in_array($month_number, $day_of_month, true)
+                ) {
                     return $timestamp_new;
                 }
             }
@@ -438,6 +483,7 @@ class SandClock
                 }
             }
         }
+
         return $date_time;
     }
 }
