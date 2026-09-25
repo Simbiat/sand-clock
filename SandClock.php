@@ -7,7 +7,7 @@ namespace Simbiat;
 /**
  * Set of functions for working with date/time.
  */
-class SandClock
+final class SandClock
 {
     public const array TIME_UNITS = [
         'aeons' => [
