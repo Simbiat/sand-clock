@@ -399,12 +399,14 @@ final class SandClock
                     }
                 }
             } catch (\Throwable $throwable) {
+                // phpcs:ignore Simbiat.SQL.DateTimeFunctions.MissingPrecision -- Not SQL
                 throw new \RuntimeException('Failed to create DateTime object from `'.$time.'`', previous: $throwable);
             }
         }
         // If somehow we do not have the original timezone in the `DateTime` object at this point, something went wrong.
         // Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
         if (!$datetime->getTimezone()) {
+            // phpcs:ignore Simbiat.SQL.DateTimeFunctions.MissingPrecision -- not SQL
             throw new \UnexpectedValueException('No TimeZone found in DateTime object');
         }
 
