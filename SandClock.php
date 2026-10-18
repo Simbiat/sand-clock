@@ -193,24 +193,24 @@ final class SandClock
     ];
 
     /**
-     * Format a value into a date
+     * Format a value into a date.
      *
-     * @param string|float|int|\DateTime|\DateTimeImmutable|null $time      Value to format
+     * @param null|\DateTime|\DateTimeImmutable|float|int|string $time      Value to format
      * @param string                                             $dt_format Expected format
      *
      * @return string
      */
-    public static function format(string|float|int|\DateTime|\DateTimeImmutable|null $time = null, string $dt_format = 'Y-m-d H:i:s.u'): string
+    public static function format(null|\DateTime|\DateTimeImmutable|float|int|string $time = null, string $dt_format = 'Y-m-d H:i:s.u'): string
     {
         return self::valueToDateTime($time)->format($dt_format);
     }
 
     /**
-     * @param string|float|int|\DateTime|\DateTimeImmutable|null $time Value to convert to DateTimeImmutable
+     * @param null|\DateTime|\DateTimeImmutable|float|int|string $time Value to convert to DateTimeImmutable
      *
      * @return \DateTimeImmutable
      */
-    public static function valueToDateTime(string|float|int|null|\DateTime|\DateTimeImmutable $time = null): \DateTimeImmutable
+    public static function valueToDateTime(null|\DateTime|\DateTimeImmutable|float|int|string $time = null): \DateTimeImmutable
     {
         if ($time instanceof \DateTime) {
             return \DateTimeImmutable::createFromMutable($time);
@@ -218,7 +218,7 @@ final class SandClock
         if ($time instanceof \DateTimeImmutable) {
             return $time;
         }
-        /** @noinspection IsEmptyFunctionUsageInspection Valid since multiple types are possible */
+        /* @noinspection IsEmptyFunctionUsageInspection Valid since multiple types are possible */
         if (empty($time)) {
             $time = \microtime(true);
         } elseif (\is_numeric($time)) {
@@ -237,20 +237,20 @@ final class SandClock
             throw new \UnexpectedValueException('Time provided is not of supported value type.');
         }
 
-        return \DateTimeImmutable::createFromFormat('U.u', \number_format($time, 6, '.', ''));
+        return \DateTimeImmutable::createFromFormat('!U.u', \number_format($time, 6, '.', ''));
     }
 
     /**
-     * Convert seconds to time left in format like `1 aeon 1 millennium 5 centuries 8 decades 5 years 6 months 1 week 1 day 7 hours 10 minutes 52 seconds`
+     * Convert seconds to time left in format like `1 aeon 1 millennium 5 centuries 8 decades 5 years 6 months 1 week 1 day 7 hours 10 minutes 52 seconds`.
      *
-     * @param string|float|int $seconds Number of seconds
+     * @param float|int|string $seconds Number of seconds
      * @param bool             $full    Whether to use full words (`true`) or just `:` separator (`false`, output will look like `1:1:5:8:5:6:1:1:7:10:52`)
      * @param string           $lang    Language to use
      * @param bool             $iso     Whether to use ISO 8601 duration format, that will produce string like `P51Y8M0W4DT8H20M31S`
      *
      * @return string
      */
-    public static function seconds(string|float|int $seconds = 0, bool $full = true, string $lang = 'en', bool $iso = false): string
+    public static function seconds(float|int|string $seconds = 0, bool $full = true, string $lang = 'en', bool $iso = false): string
     {
         if (!\is_numeric($seconds)) {
             throw new \UnexpectedValueException('Seconds provided is not numeric.');
@@ -342,21 +342,22 @@ final class SandClock
     }
 
     /**
-     * Convert timezone
+     * Convert timezone.
      *
-     * @param int|string|\DateTime|\DateTimeImmutable $time Timestamp value
-     * @param string|\DateTimeZone|null               $from Timezone to convert from. Optional if `\DateTime` or `\DateTimeImmutable` is provided
-     * @param string|\DateTimeZone                    $to   Timezone to convert to. `UTC` by default
+     * @param \DateTime|\DateTimeImmutable|int|string $time Timestamp value
+     * @param null|\DateTimeZone|string               $from Timezone to convert from. Optional if `\DateTime` or `\DateTimeImmutable` is provided
+     * @param \DateTimeZone|string                    $to   Timezone to convert to. `UTC` by default
      *
-     * @return \DateTime
+     * @return \DateTimeImmutable
      */
-    public static function convertTimezone(int|string|\DateTime|\DateTimeImmutable $time, string|\DateTimeZone|null $from = null, string|\DateTimeZone $to = 'UTC'): \DateTime
+    public static function convertTimezone(\DateTime|\DateTimeImmutable|int|string $time, null|\DateTimeZone|string $from = null, \DateTimeZone|string $to = 'UTC'): \DateTimeImmutable
     {
         // Validate and convert timezone if any of them is a string
         if (\is_string($from)) {
             if (!\in_array($from, \timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
             }
+
             try {
                 $from = new \DateTimeZone($from);
             } catch (\Throwable) {
@@ -367,6 +368,7 @@ final class SandClock
             if (!\in_array($to, \timezone_identifiers_list(), true)) {
                 throw new \UnexpectedValueException('`'.$to.'` is not a supported timezone');
             }
+
             try {
                 $to = new \DateTimeZone($to);
             } catch (\Throwable) {
@@ -377,7 +379,7 @@ final class SandClock
         if ($time instanceof \DateTimeImmutable) {
             $datetime = $time;
         } elseif ($time instanceof \DateTime) {
-            $datetime = clone $time;
+            $datetime = \DateTimeImmutable::createFromMutable($time);
         } else {
             // If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get the default one during conversion, which may not be desired
             if (
@@ -386,28 +388,29 @@ final class SandClock
             ) {
                 throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
             }
+
             try {
                 if (\preg_match('/\d{10}/', (string) $time) === 1) {
-                    $datetime = new \DateTime(timezone: $from);
-                    $datetime->setTimestamp((int) $time);
+                    $datetime = new \DateTimeImmutable(timezone: $from);
+                    $datetime = $datetime->setTimestamp((int) $time);
                 } else {
                     try {
-                        $datetime = new \DateTime($time, $from);
+                        $datetime = new \DateTimeImmutable($time, $from);
                     } catch (\Throwable) {
-                        $datetime = new \DateTime(timezone: $from);
-                        $datetime->setTimestamp((int) $time);
+                        $datetime = new \DateTimeImmutable(timezone: $from);
+                        $datetime = $datetime->setTimestamp((int) $time);
                     }
                 }
             } catch (\Throwable $throwable) {
                 // phpcs:ignore Simbiat.SQL.DateTimeFunctions.MissingPrecision -- Not SQL
-                throw new \RuntimeException('Failed to create DateTime object from `'.$time.'`', previous: $throwable);
+                throw new \RuntimeException('Failed to create DateTimeImmutable object from `'.$time.'`', previous: $throwable);
             }
         }
         // If somehow we do not have the original timezone in the `DateTime` object at this point, something went wrong.
         // Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
         if (!$datetime->getTimezone()) {
             // phpcs:ignore Simbiat.SQL.DateTimeFunctions.MissingPrecision -- not SQL
-            throw new \UnexpectedValueException('No TimeZone found in DateTime object');
+            throw new \UnexpectedValueException('No TimeZone found in DateTimeImmutable object');
         }
 
         // Change the timezone and return
@@ -415,9 +418,9 @@ final class SandClock
     }
 
     /**
-     * Function to suggest the next day that satisfies the day of week/month restrictions based on the provided timestamp
+     * Function to suggest the next day that satisfies the day of week/month restrictions based on the provided timestamp.
      *
-     * @param string|float|int|\DateTime|\DateTimeImmutable|null $timestamp    Timestamp to start with
+     * @param null|\DateTime|\DateTimeImmutable|float|int|string $timestamp    Timestamp to start with
      * @param array                                              $day_of_week  List of allowed days of the week
      * @param array                                              $day_of_month List of allowed days of the month
      *
@@ -425,7 +428,7 @@ final class SandClock
      *
      * @throws \DateMalformedStringException
      */
-    public static function suggestNextDay(string|float|int|\DateTime|\DateTimeImmutable|null $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
+    public static function suggestNextDay(null|\DateTime|\DateTimeImmutable|float|int|string $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
     {
         $date_time = self::valueToDateTime($timestamp);
         // Validate arrays for days
@@ -453,7 +456,7 @@ final class SandClock
             && \count($day_of_month) !== 0
         ) {
             // Check if week is suitable
-            for ($iteration = 0; $iteration <= 366; $iteration++) {
+            for ($iteration = 0; $iteration <= 366; ++$iteration) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
                 $week_number = (int) $timestamp_new->format('N');
                 $month_number = (int) $timestamp_new->format('j');
@@ -466,7 +469,7 @@ final class SandClock
             }
         } elseif (\count($day_of_week) !== 0) {
             // Check if week is suitable
-            for ($iteration = 0; $iteration <= 7; $iteration++) {
+            for ($iteration = 0; $iteration <= 7; ++$iteration) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' days');
                 $week_number = (int) $timestamp_new->format('N');
                 if (\in_array($week_number, $day_of_week, true)) {
@@ -475,7 +478,7 @@ final class SandClock
             }
         } elseif (\count($day_of_month) !== 0) {
             // Check if the month is suitable
-            for ($iteration = 0; $iteration <= 52; $iteration++) {
+            for ($iteration = 0; $iteration <= 52; ++$iteration) {
                 $timestamp_new = $date_time->modify('+'.$iteration.' weeks');
                 $month_number = (int) $timestamp_new->format('j');
                 if (\in_array($month_number, $day_of_month, true)) {
