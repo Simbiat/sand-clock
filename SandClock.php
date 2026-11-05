@@ -193,54 +193,97 @@ final class SandClock
     ];
 
     /**
-     * Format a value into a date.
+     * Convert timezone.
      *
-     * @param null|\DateTime|\DateTimeImmutable|float|int|string $time      Value to format
-     * @param string                                             $dt_format Expected format
+     * @param \DateTime|\DateTimeImmutable|int|string $time Timestamp value
+     * @param \DateTimeZone|string|null               $from Timezone to convert from. Optional if `\DateTime` or `\DateTimeImmutable` is provided
+     * @param \DateTimeZone|string                    $to   Timezone to convert to. `UTC` by default
      *
-     * @return string
+     * @return \DateTimeImmutable
+     *
+     * @throws \RuntimeException|\UnexpectedValueException
      */
-    public static function format(null|\DateTime|\DateTimeImmutable|float|int|string $time = null, string $dt_format = 'Y-m-d H:i:s.u'): string
+    public static function convertTimezone(\DateTime|\DateTimeImmutable|int|string $time, \DateTimeZone|string|null $from = null, \DateTimeZone|string $to = 'UTC'): \DateTimeImmutable
     {
-        return self::valueToDateTime($time)->format($dt_format);
+        // Validate and convert timezone if any of them is a string
+        if (\is_string($from)) {
+            if (!\in_array($from, \timezone_identifiers_list(), strict: true)) {
+                throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
+            }
+
+            try {
+                $from = new \DateTimeZone($from);
+            } catch (\Throwable) {
+                throw new \UnexpectedValueException('Failed to convert `'.$from.'` to time');
+            }
+        }
+
+        if (\is_string($to)) {
+            if (!\in_array($to, \timezone_identifiers_list(), strict: true)) {
+                throw new \UnexpectedValueException('`'.$to.'` is not a supported timezone');
+            }
+
+            try {
+                $to = new \DateTimeZone($to);
+            } catch (\Throwable) {
+                throw new \UnexpectedValueException('Failed to convert `'.$to.'` to time');
+            }
+        }
+
+        // Set the object depending on what we got
+        if ($time instanceof \DateTimeImmutable) {
+            $datetime = $time;
+        } elseif ($time instanceof \DateTime) {
+            $datetime = \DateTimeImmutable::createFromMutable($time);
+        } else {
+            // If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get the default one during conversion, which may not be desired
+            if (!$from instanceof \DateTimeZone) {
+                throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
+            }
+
+            try {
+                if (\preg_match('/\d{10}/', (string) $time) === 1) {
+                    $datetime = new \DateTimeImmutable(timezone: $from);
+                    $datetime = $datetime->setTimestamp((int) $time);
+                } else {
+                    try {
+                        $datetime = new \DateTimeImmutable($time, $from);
+                    } catch (\Throwable) {
+                        $datetime = new \DateTimeImmutable(timezone: $from);
+                        $datetime = $datetime->setTimestamp((int) $time);
+                    }
+                }
+            } catch (\Throwable $throwable) {
+                // phpcs:ignore Simbiat.SQL.DateTimeFunctions.MissingPrecision -- Not SQL
+                throw new \RuntimeException('Failed to create DateTimeImmutable object from `'.$time.'`', $throwable->getCode(), previous: $throwable);
+            }
+        }
+
+        // If somehow we do not have the original timezone in the `DateTime` object at this point, something went wrong.
+        // Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
+        if (!$datetime->getTimezone()) {
+            // phpcs:ignore Simbiat.SQL.DateTimeFunctions.MissingPrecision -- not SQL
+            throw new \UnexpectedValueException('No TimeZone found in DateTimeImmutable object');
+        }
+
+        // Change the timezone and return
+        return $datetime->setTimezone($to);
     }
 
     /**
-     * @param null|\DateTime|\DateTimeImmutable|float|int|string $time Value to convert to DateTimeImmutable
+     * Format a value into a date.
      *
-     * @return \DateTimeImmutable
+     * @param \DateTime|\DateTimeImmutable|float|int|string|null $time      Value to format
+     * @param string                                             $dt_format Expected format
+     *
+     * @return string
+     *
+     * @throws \RuntimeException
+     * @throws \UnexpectedValueException
      */
-    public static function valueToDateTime(null|\DateTime|\DateTimeImmutable|float|int|string $time = null): \DateTimeImmutable
+    public static function format(\DateTime|\DateTimeImmutable|float|int|string|null $time = null, string $dt_format = 'Y-m-d H:i:s.u'): string
     {
-        if ($time instanceof \DateTime) {
-            return \DateTimeImmutable::createFromMutable($time);
-        }
-
-        if ($time instanceof \DateTimeImmutable) {
-            return $time;
-        }
-
-        /* @noinspection IsEmptyFunctionUsageInspection Valid since multiple types are possible */
-        if (empty($time)) {
-            $time = \microtime(as_float: true);
-        } elseif (\is_numeric($time)) {
-            $time = \abs((float) $time);
-        }
-
-        if (\is_string($time)) {
-            try {
-                return new \DateTimeImmutable($time);
-            } catch (\Throwable) {
-                throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
-            }
-        } elseif (
-            !\is_int($time)
-            && !\is_float($time)
-        ) {
-            throw new \UnexpectedValueException('Time provided is not of supported value type.');
-        }
-
-        return \DateTimeImmutable::createFromFormat('!U.u', \number_format($time, 6, '.', ''));
+        return self::valueToDateTime($time)->format($dt_format);
     }
 
     /**
@@ -252,6 +295,8 @@ final class SandClock
      * @param bool             $iso     Whether to use ISO 8601 duration format, that will produce string like `P51Y8M0W4DT8H20M31S`
      *
      * @return string
+     *
+     * @throws \UnexpectedValueException
      */
     public static function seconds(float|int|string $seconds = 0, bool $full = true, string $lang = 'en', bool $iso = false): string
     {
@@ -355,93 +400,19 @@ final class SandClock
     }
 
     /**
-     * Convert timezone.
-     *
-     * @param \DateTime|\DateTimeImmutable|int|string $time Timestamp value
-     * @param null|\DateTimeZone|string               $from Timezone to convert from. Optional if `\DateTime` or `\DateTimeImmutable` is provided
-     * @param \DateTimeZone|string                    $to   Timezone to convert to. `UTC` by default
-     *
-     * @return \DateTimeImmutable
-     */
-    public static function convertTimezone(\DateTime|\DateTimeImmutable|int|string $time, null|\DateTimeZone|string $from = null, \DateTimeZone|string $to = 'UTC'): \DateTimeImmutable
-    {
-        // Validate and convert timezone if any of them is a string
-        if (\is_string($from)) {
-            if (!\in_array($from, \timezone_identifiers_list(), strict: true)) {
-                throw new \UnexpectedValueException('`'.$from.'` is not a supported timezone');
-            }
-
-            try {
-                $from = new \DateTimeZone($from);
-            } catch (\Throwable) {
-                throw new \UnexpectedValueException('Failed to convert `'.$from.'` to time');
-            }
-        }
-
-        if (\is_string($to)) {
-            if (!\in_array($to, \timezone_identifiers_list(), strict: true)) {
-                throw new \UnexpectedValueException('`'.$to.'` is not a supported timezone');
-            }
-
-            try {
-                $to = new \DateTimeZone($to);
-            } catch (\Throwable) {
-                throw new \UnexpectedValueException('Failed to convert `'.$to.'` to time');
-            }
-        }
-
-        // Set the object depending on what we got
-        if ($time instanceof \DateTimeImmutable) {
-            $datetime = $time;
-        } elseif ($time instanceof \DateTime) {
-            $datetime = \DateTimeImmutable::createFromMutable($time);
-        } else {
-            // If we are here, it means we need a $from, because a string can have no timezone in it, and if it does not, we will get the default one during conversion, which may not be desired
-            if (!$from instanceof \DateTimeZone) {
-                throw new \UnexpectedValueException('Time provided is not a DateTime(Immutable) and no original TimeZone was provided');
-            }
-
-            try {
-                if (\preg_match('/\d{10}/', (string) $time) === 1) {
-                    $datetime = new \DateTimeImmutable(timezone: $from);
-                    $datetime = $datetime->setTimestamp((int) $time);
-                } else {
-                    try {
-                        $datetime = new \DateTimeImmutable($time, $from);
-                    } catch (\Throwable) {
-                        $datetime = new \DateTimeImmutable(timezone: $from);
-                        $datetime = $datetime->setTimestamp((int) $time);
-                    }
-                }
-            } catch (\Throwable $throwable) {
-                // phpcs:ignore Simbiat.SQL.DateTimeFunctions.MissingPrecision -- Not SQL
-                throw new \RuntimeException('Failed to create DateTimeImmutable object from `'.$time.'`', $throwable->getCode(), previous: $throwable);
-            }
-        }
-
-        // If somehow we do not have the original timezone in the `DateTime` object at this point, something went wrong.
-        // Most likely DateTime(Immutable) was provided, but it somehow did have a timezone. Not sure if that can happen, but better check.
-        if (!$datetime->getTimezone()) {
-            // phpcs:ignore Simbiat.SQL.DateTimeFunctions.MissingPrecision -- not SQL
-            throw new \UnexpectedValueException('No TimeZone found in DateTimeImmutable object');
-        }
-
-        // Change the timezone and return
-        return $datetime->setTimezone($to);
-    }
-
-    /**
      * Function to suggest the next day that satisfies the day of week/month restrictions based on the provided timestamp.
      *
-     * @param null|\DateTime|\DateTimeImmutable|float|int|string $timestamp    Timestamp to start with
+     * @param \DateTime|\DateTimeImmutable|float|int|string|null $timestamp    Timestamp to start with
      * @param array                                              $day_of_week  List of allowed days of the week
      * @param array                                              $day_of_month List of allowed days of the month
      *
      * @return \DateTimeImmutable
      *
      * @throws \DateMalformedStringException
+     * @throws \RuntimeException
+     * @throws \UnexpectedValueException
      */
-    public static function suggestNextDay(null|\DateTime|\DateTimeImmutable|float|int|string $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
+    public static function suggestNextDay(\DateTime|\DateTimeImmutable|float|int|string|null $timestamp, array $day_of_week, array $day_of_month): \DateTimeImmutable
     {
         $date_time = self::valueToDateTime($timestamp);
         // Validate arrays for days
@@ -503,5 +474,50 @@ final class SandClock
         }
 
         return $date_time;
+    }
+
+    /**
+     * @param \DateTime|\DateTimeImmutable|float|int|string|null $time Value to convert to DateTimeImmutable
+     *
+     * @return \DateTimeImmutable
+     *
+     * @throws \RuntimeException|\UnexpectedValueException
+     */
+    public static function valueToDateTime(\DateTime|\DateTimeImmutable|float|int|string|null $time = null): \DateTimeImmutable
+    {
+        if ($time instanceof \DateTime) {
+            return \DateTimeImmutable::createFromMutable($time);
+        }
+
+        if ($time instanceof \DateTimeImmutable) {
+            return $time;
+        }
+
+        /* @noinspection IsEmptyFunctionUsageInspection Valid since multiple types are possible */
+        if (empty($time)) {
+            $time = \microtime(as_float: true);
+        } elseif (\is_numeric($time)) {
+            $time = \abs((float) $time);
+        }
+
+        if (\is_string($time)) {
+            try {
+                return new \DateTimeImmutable($time);
+            } catch (\Throwable) {
+                throw new \UnexpectedValueException('Time provided is a string and not recognized as acceptable datetime format.');
+            }
+        } elseif (
+            !\is_int($time)
+            && !\is_float($time)
+        ) {
+            throw new \UnexpectedValueException('Time provided is not of supported value type.');
+        }
+
+        $result = \DateTimeImmutable::createFromFormat('!U.u', \number_format($time, 6, '.', ''));
+        if ($result === false) {
+            throw new \RuntimeException('Failed to create DateTimeImmutable object.');
+        }
+
+        return $result;
     }
 }
